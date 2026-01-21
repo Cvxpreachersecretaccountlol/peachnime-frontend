@@ -14,17 +14,21 @@ const AdMavenOnly = () => {
       'claithfoiter.click',
       'cpmlink.net',
       'tsyndicate.com',
-      'vidcloud.pro',
-      'streamtape.com',
-      'dood.watch',
-      'filemoon.sx',
-      'hilltopads.net',
-      'trafficjunky.com',
-      'adcash.com',
       'googleadservices.com',
       'googlesyndication.com',
-      'doubleclick.net'
+      'doubleclick.net',
+      // Shopee and e-commerce
+      'shopee.co',
+      'shopee.ph',
+      'shopee.sg',
+      'lazada.co',
+      'tokopedia.com',
+      'bukalapak.com',
+      'tiktokshop.com',
     ];
+
+    // Suspicious TLDs often used for ads
+    const suspiciousTLDs = ['.click', '.xyz', '.top', '.site', '.online', '.store', '.shop', '.win', '.bid'];
 
     const allowedDomains = [
       'admaven.com',
@@ -35,30 +39,55 @@ const AdMavenOnly = () => {
 
     const shouldBlock = (url) => {
       if (!url) return false;
+      
+      // Allow AdMaven
       if (allowedDomains.some(domain => url.includes(domain))) {
         return false;
       }
-      return blockedDomains.some(domain => url.includes(domain));
+      
+      // Block known ad domains
+      if (blockedDomains.some(domain => url.includes(domain))) {
+        return true;
+      }
+      
+      // Block suspicious TLDs
+      if (suspiciousTLDs.some(tld => url.includes(tld))) {
+        return true;
+      }
+      
+      // Block random-looking domains
+      try {
+        const urlObj = new URL(url);
+        const domain = urlObj.hostname;
+        
+        // Block if domain has very long random strings (15+ chars)
+        if (/[a-z0-9]{15,}/i.test(domain)) {
+          return true;
+        }
+      } catch (e) {
+        // Not a valid URL
+      }
+      
+      return false;
     };
 
-    // 1. BLOCK REDIRECTS - Prevent window.location changes
-    let isBlocking = false;
-    const originalLocationSetter = Object.getOwnPropertyDescriptor(window, 'location').set;
-    
-    Object.defineProperty(window, 'location', {
-      get: () => window.location,
-      set: (value) => {
-        const urlString = value.toString();
-        if (shouldBlock(urlString)) {
-          console.log('🍑 Blocked redirect to:', urlString);
-          isBlocking = true;
-          return;
+    // BLOCK REDIRECTS
+    const originalLocationSetter = Object.getOwnPropertyDescriptor(window, 'location')?.set;
+    if (originalLocationSetter) {
+      Object.defineProperty(window, 'location', {
+        get: () => window.location,
+        set: (value) => {
+          const urlString = value.toString();
+          if (shouldBlock(urlString)) {
+            console.log('🍑 Blocked redirect:', urlString);
+            return;
+          }
+          originalLocationSetter.call(window, value);
         }
-        originalLocationSetter.call(window, value);
-      }
-    });
+      });
+    }
 
-    // 2. BLOCK window.open popups
+    // BLOCK window.open
     const originalOpen = window.open;
     window.open = function(...args) {
       const url = args[0];
@@ -69,28 +98,16 @@ const AdMavenOnly = () => {
       return originalOpen.apply(this, args);
     };
 
-    // 3. BLOCK link clicks to ad domains
+    // BLOCK link clicks
     document.addEventListener('click', (e) => {
       const link = e.target.closest('a');
       if (link && link.href && shouldBlock(link.href)) {
         e.preventDefault();
         e.stopPropagation();
-        console.log('🍑 Blocked link click:', link.href);
+        console.log('🍑 Blocked link:', link.href);
       }
     }, true);
 
-    // 4. BLOCK meta refresh redirects
-    const blockMetaRefresh = () => {
-      document.querySelectorAll('meta[http-equiv="refresh"]').forEach(meta => {
-        const content = meta.getAttribute('content') || '';
-        if (blockedDomains.some(domain => content.includes(domain))) {
-          meta.remove();
-          console.log('🍑 Blocked meta refresh');
-        }
-      });
-    };
-
-    // 5. BLOCK scripts
     const blockScripts = () => {
       document.querySelectorAll('script[src]').forEach(script => {
         if (shouldBlock(script.src)) {
@@ -100,7 +117,6 @@ const AdMavenOnly = () => {
       });
     };
 
-    // 6. BLOCK iframes
     const blockIframes = () => {
       document.querySelectorAll('iframe').forEach(iframe => {
         const src = iframe.src || iframe.getAttribute('src') || '';
@@ -111,24 +127,20 @@ const AdMavenOnly = () => {
       });
     };
 
-    // 7. BLOCK ad containers
     const blockContainers = () => {
       const selectors = [
         'div[id*="google_ads"]',
         'div[class*="adsbygoogle"]',
         '[class*="propeller"]',
-        '[class*="adsterra"]',
-        '[class*="exoclick"]',
-        '[class*="popcash"]'
+        '[class*="shopee"]',
+        '[id*="shopee"]'
       ];
       selectors.forEach(selector => {
         document.querySelectorAll(selector).forEach(el => el.remove());
       });
     };
 
-    // Run all blockers
     const runBlockers = () => {
-      blockMetaRefresh();
       blockScripts();
       blockIframes();
       blockContainers();
@@ -144,7 +156,7 @@ const AdMavenOnly = () => {
 
     const interval = setInterval(runBlockers, 2000);
 
-    console.log('🍑 AdMaven-ONLY with redirect blocking active');
+    console.log('🍑 AdMaven-ONLY with Shopee/random ad blocking');
 
     return () => {
       observer.disconnect();
