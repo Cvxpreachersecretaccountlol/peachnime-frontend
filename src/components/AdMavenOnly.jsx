@@ -2,9 +2,7 @@ import { useEffect } from 'react';
 
 const AdMavenOnly = () => {
   useEffect(() => {
-    // Block ALL these ad networks (keep AdMaven)
     const blockedDomains = [
-      // Video player ads
       'popcash.net',
       'propellerads.com',
       'adsterra.com',
@@ -28,7 +26,6 @@ const AdMavenOnly = () => {
       'doubleclick.net'
     ];
 
-    // ALLOWED: ONLY AdMaven
     const allowedDomains = [
       'admaven.com',
       'ads.admaven.com',
@@ -36,34 +33,76 @@ const AdMavenOnly = () => {
       'serve.admaven.com'
     ];
 
-    // Check if should be blocked
     const shouldBlock = (url) => {
       if (!url) return false;
-      
-      // Allow AdMaven
       if (allowedDomains.some(domain => url.includes(domain))) {
         return false;
       }
-      
-      // Block all other ads
       return blockedDomains.some(domain => url.includes(domain));
     };
 
-    // Block scripts
-    const blockScripts = () => {
-      const scripts = document.querySelectorAll('script[src]');
-      scripts.forEach(script => {
-        if (shouldBlock(script.src)) {
-          script.remove();
-          console.log('🍑 Blocked:', script.src);
+    // 1. BLOCK REDIRECTS - Prevent window.location changes
+    let isBlocking = false;
+    const originalLocationSetter = Object.getOwnPropertyDescriptor(window, 'location').set;
+    
+    Object.defineProperty(window, 'location', {
+      get: () => window.location,
+      set: (value) => {
+        const urlString = value.toString();
+        if (shouldBlock(urlString)) {
+          console.log('🍑 Blocked redirect to:', urlString);
+          isBlocking = true;
+          return;
+        }
+        originalLocationSetter.call(window, value);
+      }
+    });
+
+    // 2. BLOCK window.open popups
+    const originalOpen = window.open;
+    window.open = function(...args) {
+      const url = args[0];
+      if (shouldBlock(url)) {
+        console.log('🍑 Blocked popup:', url);
+        return null;
+      }
+      return originalOpen.apply(this, args);
+    };
+
+    // 3. BLOCK link clicks to ad domains
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest('a');
+      if (link && link.href && shouldBlock(link.href)) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🍑 Blocked link click:', link.href);
+      }
+    }, true);
+
+    // 4. BLOCK meta refresh redirects
+    const blockMetaRefresh = () => {
+      document.querySelectorAll('meta[http-equiv="refresh"]').forEach(meta => {
+        const content = meta.getAttribute('content') || '';
+        if (blockedDomains.some(domain => content.includes(domain))) {
+          meta.remove();
+          console.log('🍑 Blocked meta refresh');
         }
       });
     };
 
-    // Block iframes
+    // 5. BLOCK scripts
+    const blockScripts = () => {
+      document.querySelectorAll('script[src]').forEach(script => {
+        if (shouldBlock(script.src)) {
+          script.remove();
+          console.log('🍑 Blocked script:', script.src);
+        }
+      });
+    };
+
+    // 6. BLOCK iframes
     const blockIframes = () => {
-      const iframes = document.querySelectorAll('iframe');
-      iframes.forEach(iframe => {
+      document.querySelectorAll('iframe').forEach(iframe => {
         const src = iframe.src || iframe.getAttribute('src') || '';
         if (shouldBlock(src)) {
           iframe.remove();
@@ -72,7 +111,7 @@ const AdMavenOnly = () => {
       });
     };
 
-    // Block ad containers
+    // 7. BLOCK ad containers
     const blockContainers = () => {
       const selectors = [
         'div[id*="google_ads"]',
@@ -82,14 +121,14 @@ const AdMavenOnly = () => {
         '[class*="exoclick"]',
         '[class*="popcash"]'
       ];
-
       selectors.forEach(selector => {
         document.querySelectorAll(selector).forEach(el => el.remove());
       });
     };
 
-    // Run blockers
+    // Run all blockers
     const runBlockers = () => {
+      blockMetaRefresh();
       blockScripts();
       blockIframes();
       blockContainers();
@@ -97,7 +136,6 @@ const AdMavenOnly = () => {
 
     runBlockers();
 
-    // Watch for new ads
     const observer = new MutationObserver(runBlockers);
     observer.observe(document.body, {
       childList: true,
@@ -106,7 +144,7 @@ const AdMavenOnly = () => {
 
     const interval = setInterval(runBlockers, 2000);
 
-    console.log('🍑 AdMaven-ONLY: Blocking competitors + video ads');
+    console.log('🍑 AdMaven-ONLY with redirect blocking active');
 
     return () => {
       observer.disconnect();
