@@ -1,13 +1,13 @@
-# Kamanime (Frontend)
+# Peachnime (Frontend)
 
-Kamanime is a lightweight anime discovery frontend built with Vite and React.
+Peachnime is a lightweight anime discovery frontend built with Vite and React.
 
 Author: karma hacks
 
 ## Overview
 
 - Provides browsing, searching, and watching anime content.
-- Uses a separate API backend (`kamanime-API`) for data.
+- Uses a separate API backend (`peachnime-API`) for data.
 
 ## Requirements
 
@@ -19,7 +19,7 @@ Author: karma hacks
 1. Install dependencies
 
 ```powershell
-cd kamanime
+cd peachnime
 npm install
 ```
 
@@ -45,4 +45,4 @@ npm run build
 
 ## Notes
 
-The frontend expects the API to run from `kamanime-API`. Configure `src/config/config.js` to point to the API if needed.
+The frontend expects the API to run from `peachnime-API`. Configure `src/config/config.js` to point to the API if needed.

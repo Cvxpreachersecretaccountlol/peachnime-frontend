@@ -12,7 +12,7 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    const savedTheme = localStorage.getItem('kamanime-theme');
+    const savedTheme = localStorage.getItem('peachnime-theme');
     return savedTheme || 'dark';
   });
 
@@ -23,7 +23,7 @@ export const ThemeProvider = ({ children }) => {
     } else {
       root.classList.remove('light');
     }
-    localStorage.setItem('kamanime-theme', theme);
+    localStorage.setItem('peachnime-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

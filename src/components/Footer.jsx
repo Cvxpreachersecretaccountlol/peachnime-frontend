@@ -31,7 +31,7 @@ const Footer = () => {
 
         <div className="disclaimer flex flex-col justify-center items-center gap-4">
           <p className="text-sm text-center text-gray-400 max-w-2xl">
-            Kamanime does not store any files on our servers. We only provide
+            Peachnime does not store any files on our servers. We only provide
             links to media hosted on third-party services.
           </p>
 
@@ -42,7 +42,7 @@ const Footer = () => {
           </div>
 
           <p className="text-gray-500 text-sm">
-            © {currentYear} Kamanime. All rights reserved.
+            © {currentYear} Peachnime. All rights reserved.
           </p>
 
           {/* Social Icons */}
@@ -59,7 +59,7 @@ const Footer = () => {
             </motion.a>
 
             <motion.a
-              href="https://www.instagram.com/kamanime.xyz?igsh=NW5rMm5obTM5aHA="
+              href="https://www.instagram.com/peachnime.xyz?igsh=NW5rMm5obTM5aHA="
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-primary text-2xl transition-colors"

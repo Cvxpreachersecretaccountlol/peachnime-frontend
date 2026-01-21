@@ -10,12 +10,12 @@ const Logo = () => {
         transition={{ type: "spring", stiffness: 400 }}
       >
         <img 
-          src="/kamanime-logo.png" 
-          alt="Kamanime" 
+          src="/peachnime-logo.png" 
+          alt="Peachnime" 
           className="h-10 w-10 md:h-12 md:w-12 object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.6)]"
         />
         <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-violet-400 via-cyan-400 to-magenta-400 bg-clip-text text-transparent select-none">
-          Kamanime
+          Peachnime
         </h1>
       </motion.div>
     </Link>

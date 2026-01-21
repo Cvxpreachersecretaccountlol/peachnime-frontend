@@ -38,13 +38,13 @@ const Home = () => {
     <div className="relative">
       <Helmet>
         <title>
-          Kamanime | Watch Anime Online - Free Anime Streaming in HD
+          Peachnime | Watch Anime Online - Free Anime Streaming in HD
         </title>
         <meta
           name="description"
-          content="Kamanime is your ultimate destination for free anime streaming. Watch anime online with SUB and DUB in stunning HD quality."
+          content="Peachnime is your ultimate destination for free anime streaming. Watch anime online with SUB and DUB in stunning HD quality."
         />
-        <meta property="og:title" content="Kamanime - Modern Anime Streaming" />
+        <meta property="og:title" content="Peachnime - Modern Anime Streaming" />
       </Helmet>
       {isLoading ? (
         <Loader className="h-[100dvh]" />
