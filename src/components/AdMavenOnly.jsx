@@ -13,40 +13,34 @@ const AdMavenOnly = () => {
       'popads.net',
       'clickadu.com',
       'bidvertiser.com',
+      'claithfoiter.click',
+      'cpmlink.net',
+      'tsyndicate.com',
+      'vidcloud.pro',
+      'streamtape.com',
+      'dood.watch',
+      'filemoon.sx',
       'hilltopads.net',
       'trafficjunky.com',
       'adcash.com',
-      'a-ads.com',
-      'coinzilla.com',
-      'adhitz.com',
-      'adskeeper.com',
-      'mgid.com',
-      'taboola.com',
-      'outbrain.com',
-      'revcontent.com',
-      'contentabc.com',
       'googleadservices.com',
       'googlesyndication.com',
-      'doubleclick.net',
-      'advertising.com',
-      'criteo.com',
-      'serving-sys.com'
+      'doubleclick.net'
     ];
 
     // ALLOWED: ONLY AdMaven
     const allowedDomains = [
       'admaven.com',
-      'ads.admaven.com', 
+      'ads.admaven.com',
       'api.admaven.com',
-      'serve.admaven.com',
-      'cdn.admaven.com'
+      'serve.admaven.com'
     ];
 
     // Check if should be blocked
     const shouldBlock = (url) => {
       if (!url) return false;
       
-      // Allow AdMaven - don't block
+      // Allow AdMaven
       if (allowedDomains.some(domain => url.includes(domain))) {
         return false;
       }
@@ -55,7 +49,7 @@ const AdMavenOnly = () => {
       return blockedDomains.some(domain => url.includes(domain));
     };
 
-    // Block competitor scripts
+    // Block scripts
     const blockScripts = () => {
       const scripts = document.querySelectorAll('script[src]');
       scripts.forEach(script => {
@@ -66,7 +60,7 @@ const AdMavenOnly = () => {
       });
     };
 
-    // Block competitor iframes  
+    // Block iframes
     const blockIframes = () => {
       const iframes = document.querySelectorAll('iframe');
       iframes.forEach(iframe => {
@@ -78,19 +72,15 @@ const AdMavenOnly = () => {
       });
     };
 
-    // Block ad containers (except AdMaven)
+    // Block ad containers
     const blockContainers = () => {
       const selectors = [
         'div[id*="google_ads"]',
         'div[class*="adsbygoogle"]',
         '[class*="propeller"]',
-        '[id*="propeller"]',
         '[class*="adsterra"]',
-        '[id*="adsterra"]',
         '[class*="exoclick"]',
-        '[id*="exoclick"]',
-        '[class*="popcash"]',
-        '[id*="popcash"]'
+        '[class*="popcash"]'
       ];
 
       selectors.forEach(selector => {
@@ -98,25 +88,7 @@ const AdMavenOnly = () => {
       });
     };
 
-    // Intercept createElement to block at creation
-    const originalCreateElement = document.createElement.bind(document);
-    document.createElement = function(tagName) {
-      const element = originalCreateElement(tagName);
-      
-      if (tagName.toLowerCase() === 'script' || tagName.toLowerCase() === 'iframe') {
-        const originalSetAttribute = element.setAttribute.bind(element);
-        element.setAttribute = function(name, value) {
-          if (name === 'src' && shouldBlock(value)) {
-            console.log('🍑 Blocked at creation:', value);
-            return; // Don't set src
-          }
-          return originalSetAttribute(name, value);
-        };
-      }
-      return element;
-    };
-
-    // Run all blockers
+    // Run blockers
     const runBlockers = () => {
       blockScripts();
       blockIframes();
@@ -134,7 +106,7 @@ const AdMavenOnly = () => {
 
     const interval = setInterval(runBlockers, 2000);
 
-    console.log('🍑 AdMaven-ONLY mode: All other ads blocked');
+    console.log('🍑 AdMaven-ONLY: Blocking competitors + video ads');
 
     return () => {
       observer.disconnect();
