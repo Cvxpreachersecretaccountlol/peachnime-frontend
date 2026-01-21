@@ -1,11 +1,12 @@
 import AdMavenOnly from "./components/AdMavenOnly";
-import AdMavenOnly from "./components/AdMavenOnly";
-import AdMavenOnly from "./components/AdMavenOnly";
 import AppContent from "./AppContent";
 
 const App = () => {
-  return <AppContent />;
-};
+  return ( <>
+         <AdMavenOnly />
+         <AppContent  />
+   </>
+);
 
 // pages
 // /
