@@ -161,3 +161,33 @@ input:focus {
   color: #fff;
   opacity: 0.5;
 }
+
+/* === Block ALL ads except AdMaven === */
+[class*="propeller"],
+[id*="propeller"],
+[class*="adsterra"],
+[id*="adsterra"],
+[class*="exoclick"],
+[id*="exoclick"],
+[class*="popcash"],
+[id*="popcash"],
+[class*="adsbygoogle"],
+[id*="google_ads"],
+iframe[src*="popcash"],
+iframe[src*="propeller"],
+iframe[src*="adsterra"],
+iframe[src*="exoclick"],
+iframe[src*="doubleclick"],
+iframe[src*="googlesyndication"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* ALLOW AdMaven ads */
+[class*="admaven"],
+[id*="admaven"],
+iframe[src*="admaven"] {
+  display: block !important;
+  visibility: visible !important;
+}
