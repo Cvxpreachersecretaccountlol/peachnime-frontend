@@ -48,7 +48,7 @@ const Footer = () => {
           {/* Social Icons */}
           <div className="flex justify-center items-center gap-6 mt-2">
             <motion.a
-              href="https://discord.gg/pAcf7RGxuy"
+              href="https://discord.gg/ajv9JQbMGb"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-primary text-2xl transition-colors"
@@ -59,7 +59,7 @@ const Footer = () => {
             </motion.a>
 
             <motion.a
-              href="https://www.instagram.com/peachnime.xyz?igsh=NW5rMm5obTM5aHA="
+              href="https://www.instagram.com/peachnime.insta?igsh=dWcwZjI3NXl3OG92"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-primary text-2xl transition-colors"
