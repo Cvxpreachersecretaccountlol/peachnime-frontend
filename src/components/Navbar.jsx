@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaAlignJustify } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import LoginButton from "./LoginButton";
 
 const Navbar = () => {
   const [show, setShow] = useState(false);
@@ -19,14 +20,14 @@ const Navbar = () => {
 
   return (
     <nav>
-      <div className="nav hidden md:flex justify-center items-center">
+      <div className="nav hidden md:flex justify-center items-center gap-6">
         <ul className="flex gap-8 lg:gap-10">
           {navLinks.map((item) => (
             <li key={item.id} className="relative">
-              <Link 
+              <Link
                 className={`font-medium transition-all duration-300 hover:text-primary ${
-                  isActive(item.id) 
-                    ? 'text-primary drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' 
+                  isActive(item.id)
+                    ? 'text-primary drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]'
                     : 'text-gray-300'
                 }`}
                 to={item.id}
@@ -45,14 +46,22 @@ const Navbar = () => {
             </li>
           ))}
         </ul>
+        
+        <LoginButton />
       </div>
+
       <div className="block md:hidden relative w-full">
-        <button onClick={() => setShow(!show)} className="w-full">
-          <h1 className="flex pt-5 pl-5 justify-start items-center gap-2 text-gray-300 font-medium">
-            <FaAlignJustify />
-            Menu
-          </h1>
-        </button>
+        <div className="flex justify-between items-center px-5 pt-5">
+          <button onClick={() => setShow(!show)}>
+            <h1 className="flex justify-start items-center gap-2 text-gray-300 font-medium">
+              <FaAlignJustify />
+              Menu
+            </h1>
+          </button>
+          
+          <LoginButton />
+        </div>
+
         <AnimatePresence>
           {show && (
             <motion.ul
@@ -60,7 +69,7 @@ const Navbar = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
-              className="w-11/12 mx-3 absolute flex flex-col justify-center items-center z-10 glass rounded-2xl py-5 gap-3 border border-violet-500/20"
+              className="w-11/12 mx-3 absolute flex flex-col justify-center items-center z-10 glass rounded-2xl py-5 gap-3 border border-violet-500/20 mt-4"
             >
               {navLinks.map((item) => (
                 <li
