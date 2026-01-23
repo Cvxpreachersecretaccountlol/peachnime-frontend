@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlay, FaClock } from 'react-icons/fa';
+import { FaPlay, FaClock, FaTrash } from 'react-icons/fa';
 import Loader from '../components/Loader';
 
 const ContinueWatchingPage = () => {
@@ -22,7 +22,6 @@ const ContinueWatchingPage = () => {
   const loadWatchHistory = async () => {
     setLoading(true);
     try {
-      // Get most recent episode for each anime
       const { data, error } = await supabase
         .from('watch_history')
         .select('*')
@@ -47,6 +46,20 @@ const ContinueWatchingPage = () => {
       console.error('Error loading watch history:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteFromHistory = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('watch_history')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setWatchHistory(watchHistory.filter(item => item.id !== id));
+    } catch (error) {
+      alert('Error removing from history: ' + error.message);
     }
   };
 
@@ -103,14 +116,14 @@ const ContinueWatchingPage = () => {
                 key={item.id}
                 className="bg-[#1a1a2e] rounded-xl overflow-hidden border border-violet-500/20 hover:border-violet-500/40 transition-all group relative"
               >
-                <Link to={`/watch/${item.anime_id}?ep=${item.episode_number}`}>
+                <Link to={`/watch/${item.anime_id}?ep=${item.episode_number}#t=${item.time_watched}`}>
                   <img
                     src={item.anime_image}
                     alt={item.anime_title}
                     className="w-full h-64 object-cover"
                   />
                   
-                  {/* Time Left Off Badge */}
+                  {/* Time Badge */}
                   <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1 text-xs">
                     <FaClock className="text-violet-400" />
                     <span>{formatTime(item.time_watched)}</span>
@@ -118,16 +131,26 @@ const ContinueWatchingPage = () => {
 
                   {/* Play overlay on hover */}
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <FaPlay className="text-4xl text-white" />
+                    <div className="text-center">
+                      <FaPlay className="text-4xl text-white mx-auto mb-2" />
+                      <p className="text-sm">Resume at {formatTime(item.time_watched)}</p>
+                    </div>
                   </div>
                 </Link>
+
+                <button
+                  onClick={() => deleteFromHistory(item.id)}
+                  className="absolute top-2 left-2 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                >
+                  <FaTrash className="text-sm" />
+                </button>
 
                 <div className="p-3">
                   <h3 className="font-bold text-sm line-clamp-2 mb-1">
                     {item.anime_title}
                   </h3>
-                  <p className="text-xs text-gray-400">
-                    EP {item.episode_number}
+                  <p className="text-xs text-violet-400">
+                    Episode {item.episode_number}
                   </p>
                 </div>
               </div>

@@ -22,27 +22,14 @@ const HistoryPage = () => {
   const loadHistory = async () => {
     setLoading(true);
     try {
-      // Get unique anime (group by anime_id, get most recent)
       const { data, error } = await supabase
         .from('watch_history')
-        .select('anime_id, anime_title, anime_image, last_watched_at')
+        .select('*')
         .eq('user_id', user.id)
         .order('last_watched_at', { ascending: false });
 
       if (error) throw error;
-
-      // Remove duplicates (keep only unique anime)
-      const uniqueAnime = [];
-      const seenIds = new Set();
-      
-      data?.forEach(item => {
-        if (!seenIds.has(item.anime_id)) {
-          seenIds.add(item.anime_id);
-          uniqueAnime.push(item);
-        }
-      });
-
-      setHistory(uniqueAnime);
+      setHistory(data || []);
     } catch (error) {
       console.error('Error loading history:', error);
     } finally {
@@ -63,6 +50,20 @@ const HistoryPage = () => {
       setHistory([]);
     } catch (error) {
       alert('Error clearing history: ' + error.message);
+    }
+  };
+
+  const deleteItem = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('watch_history')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setHistory(history.filter(item => item.id !== id));
+    } catch (error) {
+      alert('Error deleting item: ' + error.message);
     }
   };
 
@@ -97,7 +98,7 @@ const HistoryPage = () => {
             <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-cyan-500 mb-2 flex items-center gap-3">
               <FaHistory /> Watch History
             </h1>
-            <p className="text-gray-400">{history.length} anime watched</p>
+            <p className="text-gray-400">{history.length} episodes watched</p>
           </div>
           {history.length > 0 && (
             <button
@@ -122,23 +123,35 @@ const HistoryPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {history.map((item, index) => (
-              <Link
-                key={index}
-                to={`/anime/${item.anime_id}`}
-                className="bg-[#1a1a2e] rounded-xl overflow-hidden border border-violet-500/20 hover:border-violet-500/40 transition-all group"
+            {history.map((item) => (
+              <div
+                key={item.id}
+                className="bg-[#1a1a2e] rounded-xl overflow-hidden border border-violet-500/20 hover:border-violet-500/40 transition-all group relative"
               >
-                <img
-                  src={item.anime_image}
-                  alt={item.anime_title}
-                  className="w-full h-64 object-cover"
-                />
+                <Link to={`/anime/${item.anime_id}`}>
+                  <img
+                    src={item.anime_image}
+                    alt={item.anime_title}
+                    className="w-full h-64 object-cover"
+                  />
+                </Link>
+
+                <button
+                  onClick={() => deleteItem(item.id)}
+                  className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                >
+                  <FaTrash className="text-sm" />
+                </button>
+
                 <div className="p-3">
-                  <h3 className="font-bold text-sm line-clamp-2">
+                  <h3 className="font-bold text-sm line-clamp-2 mb-1">
                     {item.anime_title}
                   </h3>
+                  <p className="text-xs text-violet-400">
+                    Episode {item.episode_number}
+                  </p>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}
