@@ -36,7 +36,7 @@ const Sidebar = () => {
 
   return (
     <div
-      className={`sidebar transition-all fixed overflow-scroll h-full z-[100] inset-0 w-64 md:w-80 bg-[rgba(255,255,255,.1);] ${
+      className={`sidebar transition-all fixed overflow-scroll h-full z-[100] inset-0 w-64 md:w-80 bg-[rgba(10,10,15,0.95)] backdrop-blur-xl ${
         isSidebarOpen ? "translate-x-0" : "translate-x-[-100%]"
       }`}
     >
