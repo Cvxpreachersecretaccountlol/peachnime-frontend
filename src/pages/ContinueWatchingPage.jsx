@@ -26,11 +26,12 @@ const ContinueWatchingPage = () => {
         .from('watch_history')
         .select('*')
         .eq('user_id', user.id)
-        .order('last_watched_at', { ascending: false });
+        .order('last_watched_at', { ascending: false })
+        .limit(20);
 
       if (error) throw error;
 
-      // Group by anime_id and keep only most recent
+      // Get one entry per anime (most recent)
       const uniqueAnime = [];
       const seenIds = new Set();
       
@@ -41,6 +42,7 @@ const ContinueWatchingPage = () => {
         }
       });
 
+      console.log('Continue watching data:', uniqueAnime); // Debug
       setWatchHistory(uniqueAnime);
     } catch (error) {
       console.error('Error loading watch history:', error);
@@ -49,21 +51,23 @@ const ContinueWatchingPage = () => {
     }
   };
 
-  const deleteFromHistory = async (id) => {
+  const deleteFromHistory = async (animeId) => {
     try {
       const { error } = await supabase
         .from('watch_history')
         .delete()
-        .eq('id', id);
+        .eq('user_id', user.id)
+        .eq('anime_id', animeId);
 
       if (error) throw error;
-      setWatchHistory(watchHistory.filter(item => item.id !== id));
+      setWatchHistory(watchHistory.filter(item => item.anime_id !== animeId));
     } catch (error) {
-      alert('Error removing from history: ' + error.message);
+      alert('Error removing: ' + error.message);
     }
   };
 
   const formatTime = (seconds) => {
+    if (!seconds) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -101,7 +105,9 @@ const ContinueWatchingPage = () => {
 
         {watchHistory.length === 0 ? (
           <div className="text-center py-20">
+            <FaPlay className="text-6xl text-gray-600 mx-auto mb-6" />
             <p className="text-gray-400 text-xl mb-6">No watch history yet</p>
+            <p className="text-sm text-gray-500 mb-6">Start watching anime to see your progress here!</p>
             <Link
               to="/home"
               className="px-8 py-4 bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all inline-block"
@@ -110,48 +116,48 @@ const ContinueWatchingPage = () => {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="space-y-3">
             {watchHistory.map((item) => (
               <div
                 key={item.id}
-                className="bg-[#1a1a2e] rounded-xl overflow-hidden border border-violet-500/20 hover:border-violet-500/40 transition-all group relative"
+                className="bg-[#1a1a2e] rounded-xl p-4 border border-violet-500/20 hover:border-violet-500/40 transition-all flex gap-4 items-center group"
               >
-                <Link to={`/watch/${item.anime_id}?ep=${item.episode_number}#t=${item.time_watched}`}>
+                <Link to={`/watch/${item.anime_id}?ep=${item.episode_number}`} className="flex-shrink-0">
                   <img
-                    src={item.anime_image}
+                    src={item.anime_image || '/placeholder.png'}
                     alt={item.anime_title}
-                    className="w-full h-64 object-cover"
+                    className="w-20 h-28 object-cover rounded-lg"
                   />
-                  
-                  {/* Time Badge */}
-                  <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1 text-xs">
-                    <FaClock className="text-violet-400" />
-                    <span>{formatTime(item.time_watched)}</span>
-                  </div>
-
-                  {/* Play overlay on hover */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="text-center">
-                      <FaPlay className="text-4xl text-white mx-auto mb-2" />
-                      <p className="text-sm">Resume at {formatTime(item.time_watched)}</p>
-                    </div>
-                  </div>
                 </Link>
-
-                <button
-                  onClick={() => deleteFromHistory(item.id)}
-                  className="absolute top-2 left-2 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                >
-                  <FaTrash className="text-sm" />
-                </button>
-
-                <div className="p-3">
-                  <h3 className="font-bold text-sm line-clamp-2 mb-1">
-                    {item.anime_title}
-                  </h3>
-                  <p className="text-xs text-violet-400">
+                
+                <div className="flex-1">
+                  <Link to={`/watch/${item.anime_id}?ep=${item.episode_number}`}>
+                    <h3 className="font-bold text-lg mb-1 hover:text-violet-400 transition-colors line-clamp-1">
+                      {item.anime_title}
+                    </h3>
+                  </Link>
+                  <p className="text-sm text-violet-400 mb-1">
                     Episode {item.episode_number}
                   </p>
+                  <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <FaClock className="text-violet-400" />
+                    Resume at {formatTime(item.time_watched)}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Link
+                    to={`/watch/${item.anime_id}?ep=${item.episode_number}`}
+                    className="px-4 py-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all flex items-center gap-2"
+                  >
+                    <FaPlay /> Resume
+                  </Link>
+                  <button
+                    onClick={() => deleteFromHistory(item.anime_id)}
+                    className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <FaTrash />
+                  </button>
                 </div>
               </div>
             ))}
