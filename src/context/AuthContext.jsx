@@ -22,17 +22,11 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithGoogle = async (turnstileToken) => {
-    if (!turnstileToken) {
-      alert('Please complete the verification');
-      return;
-    }
-
+  const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/home`,
-        captchaToken: turnstileToken
+        redirectTo: `${window.location.origin}/home`
       }
     });
     

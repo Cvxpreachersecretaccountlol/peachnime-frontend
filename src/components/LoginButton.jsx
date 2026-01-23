@@ -7,14 +7,16 @@ const LoginButton = () => {
   const { user, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [showTurnstile, setShowTurnstile] = useState(false);
+  const [verified, setVerified] = useState(false);
 
   const handleLoginClick = () => {
     setShowTurnstile(true);
   };
 
   const handleTurnstileVerify = (token) => {
-    signInWithGoogle(token);
-    setShowTurnstile(false);
+    // Turnstile verified, now allow login
+    setVerified(true);
+    signInWithGoogle();
   };
 
   if (user) {
@@ -29,7 +31,7 @@ const LoginButton = () => {
     );
   }
 
-  if (showTurnstile) {
+  if (showTurnstile && !verified) {
     return (
       <div className="flex flex-col items-center gap-4 p-4 bg-[#1a1a2e] rounded-xl border border-violet-500/20">
         <p className="text-sm text-gray-300 mb-2">Verify you're human 🍑</p>
