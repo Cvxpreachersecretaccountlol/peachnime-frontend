@@ -8,12 +8,13 @@ import PageNotFound from "./PageNotFound";
 import { MdTableRows } from "react-icons/md";
 import { HiMiniViewColumns } from "react-icons/hi2";
 import { Helmet } from "react-helmet";
+import CommentSection from "../components/CommentSection";
 
 const WatchPage = () => {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [layout, setLayout] = useState("row");
-
+  
   const ep = searchParams.get("ep");
 
   const { data, isError } = useApi(`/episodes/${id}`);
@@ -26,16 +27,14 @@ const WatchPage = () => {
       return newParams;
     });
   };
-  // Update document title
 
-  // Auto-redirect to first episode if no `ep` param exists
   useEffect(() => {
     if (!ep && Array.isArray(episodes) && episodes.length > 0) {
       const ep = episodes[0].id.split("ep=").pop();
       updateParams(ep);
     }
   }, [ep, episodes, setSearchParams]);
-
+  
   if (isError) {
     return <PageNotFound />;
   }
@@ -65,17 +64,16 @@ const WatchPage = () => {
   const hasPrevEp = Boolean(episodes[currentEp.episodeNumber - 1 - 1]);
 
   return (
-    /* WatchPage.js */
     <div className="bg-backGround pt-14 max-w-screen-xl mx-auto py-2 md:px-2">
       <Helmet>
         <title>
           Watch {id.split("-").slice(0, 2).join(" ")} Online, Free Anime
-          Streaming Online on Watanuki Anime Website
+          Streaming Online on Peachnime 🍑
         </title>
-        <meta property="og:title" content="watch - watanuki" />
+        <meta property="og:title" content={`watch - peachnime`} />
       </Helmet>
       <div className="flex flex-col gap-2">
-        <div className="path flex mb-2 mx-2 items-center gap-2 text-base ">
+        <div className="path flex mb-2 mx-2 items-center gap-2 text-base">
           <Link className="" to="/home">
             <h4 className="hover:text-primary">home</h4>
           </Link>
@@ -98,42 +96,36 @@ const WatchPage = () => {
             hasPrevEp={hasPrevEp}
           />
         )}
-        <div className="input w-full mt-2 flex items-end justify-end gap-3 text-end">
-          <div className="btns bg-btnbg flex mx-2 rounded-child">
-            <button
-              className={`row item p-2 ${
-                layout === "row" ? "bg-primary text-black" : undefined
+
+        {/* Comment Section - Right after player */}
+        <CommentSection 
+          animeId={id} 
+          episodeNumber={parseInt(ep) || 1}
+        />
+
+        <div className="flex justify-end gap-2 px-2 items-center">
+          <p className="text-sm gray">layout:</p>
+          <button onClick={() => setLayout("col")}>
+            <HiMiniViewColumns
+              className={`text-xl ${
+                layout === "col" ? "text-primary" : "text-white"
               }`}
-              onClick={() => setLayout("row")}
-            >
-              <MdTableRows size={"20px"} />
-            </button>
-            <button
-              className={`column item p-2 ${
-                layout === "column" ? "bg-primary text-black" : undefined
-              }`}
-              onClick={() => setLayout("column")}
-            >
-              <HiMiniViewColumns size={"20px"} />
-            </button>
-          </div>
-        </div>
-        <ul
-          className={`episodes max-h-[50vh] py-4 px-2 overflow-scroll bg-lightbg grid gap-1  md:gap-2 ${
-            layout === "row"
-              ? " grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-              : " grid-cols-5 md:grid-cols-10"
-          }`}
-        >
-          {episodes?.map((episode) => (
-            <Episodes
-              key={episode.id}
-              episode={episode}
-              currentEp={currentEp}
-              layout={layout}
             />
-          ))}
-        </ul>
+          </button>
+          <button onClick={() => setLayout("row")}>
+            <MdTableRows
+              className={`text-xl ${
+                layout === "row" ? "text-primary" : "text-white"
+              }`}
+            />
+          </button>
+        </div>
+        <Episodes
+          layout={layout}
+          data={episodes}
+          selectedEp={ep}
+          onClick={updateParams}
+        />
       </div>
     </div>
   );
