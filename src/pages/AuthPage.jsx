@@ -9,6 +9,7 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
   const [usernameError, setUsernameError] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -20,6 +21,9 @@ const AuthPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (e.target.name === 'username') {
       setUsernameError('');
+    }
+    if (e.target.name === 'email') {
+      setEmailError('');
     }
   };
 
@@ -57,11 +61,10 @@ const AuthPage = () => {
       return;
     }
 
-    // Check username availability before signup
     if (!isLogin) {
       const isTaken = await checkUsername(formData.username);
       if (isTaken) {
-        setUsernameError('Username is already taken');
+        setUsernameError('Username claimed, change username');
         return;
       }
     }
@@ -70,7 +73,6 @@ const AuthPage = () => {
 
     try {
       if (isLogin) {
-        // Login
         const { data, error } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
@@ -79,7 +81,6 @@ const AuthPage = () => {
         if (error) throw error;
         navigate('/home');
       } else {
-        // Sign up
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -90,7 +91,14 @@ const AuthPage = () => {
           }
         });
 
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          if (signUpError.message.includes('already registered') || signUpError.message.includes('User already registered')) {
+            setEmailError('Email has a linked account already');
+            setLoading(false);
+            return;
+          }
+          throw signUpError;
+        }
 
         alert('Account created! 🍑 Please check your email to verify your account.');
         setIsLogin(true);
@@ -143,7 +151,7 @@ const AuthPage = () => {
                 placeholder="Choose a username"
               />
               {usernameError && (
-                <p className="text-red-400 text-sm mt-2">{usernameError}</p>
+                <p className="text-red-400 text-sm mt-2 font-semibold">⚠️ {usernameError}</p>
               )}
             </div>
           )}
@@ -161,6 +169,9 @@ const AuthPage = () => {
               className="w-full p-3 rounded-xl border-2 border-violet-500/30 bg-[#16213e] text-white focus:border-violet-500 outline-none"
               placeholder="your@email.com"
             />
+            {emailError && (
+              <p className="text-red-400 text-sm mt-2 font-semibold">⚠️ {emailError}</p>
+            )}
           </div>
 
           <div className="bg-[#1a1a2e] rounded-xl p-4 border border-violet-500/20">
@@ -228,6 +239,7 @@ const AuthPage = () => {
               setIsLogin(!isLogin);
               setVerified(false);
               setUsernameError('');
+              setEmailError('');
             }}
             className="w-full text-sm text-gray-400 hover:text-white transition-all"
           >
