@@ -20,8 +20,18 @@ const WatchPage = () => {
   const episodes = data?.data;
 
   // Fetch anime details for watch history
-  const { data: animeData } = useApi(`/anime/${id}`);
-  const anime = animeData?.data;
+  const { data: animeDataResponse } = useApi(`/anime/${id}`);
+  const animeData = animeDataResponse?.data;
+
+  // Debug: Log anime data when it loads
+  useEffect(() => {
+    if (animeData) {
+      console.log('🍑 Anime Data Loaded:', {
+        title: animeData.title,
+        poster: animeData.poster
+      });
+    }
+  }, [animeData]);
 
   const updateParams = (newParam) => {
     setSearchParams((prev) => {
@@ -83,7 +93,7 @@ const WatchPage = () => {
           <span className="h-1 w-1 rounded-full bg-primary"></span>
           <Link to={`/anime/${id}`}>
             <h4 className="hover:text-primary">
-              {id.split("-").slice(0, 2).join(" ")}
+              {animeData?.title || id.split("-").slice(0, 2).join(" ")}
             </h4>
           </Link>
           <span className="h-1 w-1 rounded-full bg-primary"></span>
@@ -97,7 +107,7 @@ const WatchPage = () => {
             changeEpisode={changeEpisode}
             hasNextEp={hasNextEp}
             hasPrevEp={hasPrevEp}
-            animeData={anime} // Pass anime data here
+            animeData={animeData}
           />
         )}
         <div className="input w-full mt-2 flex items-end justify-end gap-3 text-end">
