@@ -42,7 +42,6 @@ const ContinueWatchingPage = () => {
         }
       });
 
-      console.log('Continue watching data:', uniqueAnime); // Debug
       setWatchHistory(uniqueAnime);
     } catch (error) {
       console.error('Error loading watch history:', error);
@@ -51,7 +50,10 @@ const ContinueWatchingPage = () => {
     }
   };
 
-  const deleteFromHistory = async (animeId) => {
+  const deleteFromHistory = async (e, animeId) => {
+    e.preventDefault(); // Prevent navigation
+    e.stopPropagation();
+    
     try {
       const { error } = await supabase
         .from('watch_history')
@@ -118,24 +120,21 @@ const ContinueWatchingPage = () => {
         ) : (
           <div className="space-y-3">
             {watchHistory.map((item) => (
-              <div
+              <Link
                 key={item.id}
-                className="bg-[#1a1a2e] rounded-xl p-4 border border-violet-500/20 hover:border-violet-500/40 transition-all flex gap-4 items-center group"
+                to={`/watch/${item.anime_id}?ep=${item.episode_number}`}
+                className="bg-[#1a1a2e] rounded-xl p-4 border border-violet-500/20 hover:border-violet-500/40 transition-all flex gap-4 items-center group cursor-pointer"
               >
-                <Link to={`/watch/${item.anime_id}?ep=${item.episode_number}`} className="flex-shrink-0">
-                  <img
-                    src={item.anime_image || '/placeholder.png'}
-                    alt={item.anime_title}
-                    className="w-20 h-28 object-cover rounded-lg"
-                  />
-                </Link>
+                <img
+                  src={item.anime_image || '/placeholder.png'}
+                  alt={item.anime_title}
+                  className="w-20 h-28 object-cover rounded-lg flex-shrink-0"
+                />
                 
                 <div className="flex-1">
-                  <Link to={`/watch/${item.anime_id}?ep=${item.episode_number}`}>
-                    <h3 className="font-bold text-lg mb-1 hover:text-violet-400 transition-colors line-clamp-1">
-                      {item.anime_title}
-                    </h3>
-                  </Link>
+                  <h3 className="font-bold text-lg mb-1 group-hover:text-violet-400 transition-colors line-clamp-1">
+                    {item.anime_title}
+                  </h3>
                   <p className="text-sm text-violet-400 mb-1">
                     Episode {item.episode_number}
                   </p>
@@ -145,21 +144,13 @@ const ContinueWatchingPage = () => {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Link
-                    to={`/watch/${item.anime_id}?ep=${item.episode_number}`}
-                    className="px-4 py-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all flex items-center gap-2"
-                  >
-                    <FaPlay /> Resume
-                  </Link>
-                  <button
-                    onClick={() => deleteFromHistory(item.anime_id)}
-                    className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <FaTrash />
-                  </button>
-                </div>
-              </div>
+                <button
+                  onClick={(e) => deleteFromHistory(e, item.anime_id)}
+                  className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+                >
+                  <FaTrash />
+                </button>
+              </Link>
             ))}
           </div>
         )}

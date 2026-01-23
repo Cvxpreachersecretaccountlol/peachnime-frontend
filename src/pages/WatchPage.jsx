@@ -13,11 +13,15 @@ const WatchPage = () => {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [layout, setLayout] = useState("row");
-
   const ep = searchParams.get("ep");
 
+  // Fetch episodes
   const { data, isError } = useApi(`/episodes/${id}`);
   const episodes = data?.data;
+
+  // Fetch anime details for watch history
+  const { data: animeData } = useApi(`/anime/${id}`);
+  const anime = animeData?.data;
 
   const updateParams = (newParam) => {
     setSearchParams((prev) => {
@@ -26,9 +30,7 @@ const WatchPage = () => {
       return newParams;
     });
   };
-  // Update document title
 
-  // Auto-redirect to first episode if no `ep` param exists
   useEffect(() => {
     if (!ep && Array.isArray(episodes) && episodes.length > 0) {
       const ep = episodes[0].id.split("ep=").pop();
@@ -65,14 +67,13 @@ const WatchPage = () => {
   const hasPrevEp = Boolean(episodes[currentEp.episodeNumber - 1 - 1]);
 
   return (
-    /* WatchPage.js */
     <div className="bg-backGround pt-14 max-w-screen-xl mx-auto py-2 md:px-2">
       <Helmet>
         <title>
           Watch {id.split("-").slice(0, 2).join(" ")} Online, Free Anime
-          Streaming Online on Watanuki Anime Website
+          Streaming Online on Peachnime 🍑
         </title>
-        <meta property="og:title" content="watch - watanuki" />
+        <meta property="og:title" content="watch - peachnime" />
       </Helmet>
       <div className="flex flex-col gap-2">
         <div className="path flex mb-2 mx-2 items-center gap-2 text-base ">
@@ -96,6 +97,7 @@ const WatchPage = () => {
             changeEpisode={changeEpisode}
             hasNextEp={hasNextEp}
             hasPrevEp={hasPrevEp}
+            animeData={anime} // Pass anime data here
           />
         )}
         <div className="input w-full mt-2 flex items-end justify-end gap-3 text-end">

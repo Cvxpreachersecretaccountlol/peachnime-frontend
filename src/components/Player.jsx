@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useState } from "react";
 import {
   TbPlayerTrackPrevFilled,
   TbPlayerTrackNextFilled,
@@ -14,16 +15,16 @@ const Player = ({
   hasNextEp,
   hasPrevEp,
   id, // anime id
+  animeData, // We need to pass anime data from WatchPage
 }) => {
   const { user } = useAuth();
   const [category, setCategory] = useState("sub");
   const [server, setServer] = useState("vidWish");
-  const iframeRef = useRef(null);
   const watchIntervalRef = useRef(null);
 
   useEffect(() => {
     // Save watch history when episode changes
-    if (user && id && currentEp) {
+    if (user && id && currentEp && animeData) {
       saveWatchHistory();
     }
 
@@ -42,24 +43,20 @@ const Player = ({
   }, [user, id, currentEp?.episodeNumber]);
 
   const saveWatchHistory = async () => {
-    if (!user || !id || !currentEp) return;
+    if (!user || !id || !currentEp || !animeData) return;
 
     try {
-      // Get anime details from WatchPage data (we'll need to pass this)
-      const animeId = id;
-      const episodeNumber = currentEp.episodeNumber;
-
       await supabase
         .from('watch_history')
         .upsert({
           user_id: user.id,
-          anime_id: animeId,
-          anime_title: currentEp.title || id.split('-').slice(0, 2).join(' '),
-          anime_image: currentEp.image || '',
-          episode_number: episodeNumber,
+          anime_id: id,
+          anime_title: animeData.title, // Anime title, not episode title
+          anime_image: animeData.poster, // Anime poster, not episode thumbnail
+          episode_number: currentEp.episodeNumber,
           episode_id: episodeId,
           time_watched: 0,
-          total_duration: 1500, // Default 25 min episode
+          total_duration: 1500,
           last_watched_at: new Date().toISOString()
         }, {
           onConflict: 'user_id,anime_id,episode_number'
@@ -73,7 +70,6 @@ const Player = ({
     if (!user || !id || !currentEp) return;
 
     try {
-      // Increment watch time by 10 seconds
       const { data: existing } = await supabase
         .from('watch_history')
         .select('time_watched')
@@ -112,7 +108,6 @@ const Player = ({
     <>
       <div className="w-full bg-background aspect-video relative rounded-sm max-w-screen-xl overflow-hidden">
         <iframe
-          ref={iframeRef}
           src={`https://${
             server === "vidWish" ? "vidwish.live" : "megaplay.buzz"
           }/stream/s-2/${episodeId.split("ep=").pop()}/${category}`}
