@@ -50,6 +50,7 @@ const AppContent = () => {
               <Route path="/anime/:id" element={<DetailPage />} />
               <Route path="/watch/:id" element={<WatchPage />} />
               <Route path="/animes/:type" element={<ListPage />} />
+              <Route path="/animes/:type/:page" element={<ListPage />} />
               <Route path="/search" element={<SearchResult />} />
               <Route path="/characters" element={<CharactersPage />} />
               <Route path="/character/:id" element={<CharacterInfoPage />} />
