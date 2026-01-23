@@ -85,7 +85,7 @@ const ProfilePage = () => {
           <input
             type="url"
             placeholder="https://example.com/avatar.jpg"
-            value={profile.avatar_url}
+            value={profile.avatar_url || ''}
             onChange={(e) => setProfile({ ...profile, avatar_url: e.target.value })}
             className="w-full p-3 rounded-xl border-2 border-violet-500/30 bg-[#16213e] text-white focus:border-violet-500 outline-none mb-4"
           />
@@ -105,7 +105,7 @@ const ProfilePage = () => {
           <input
             type="text"
             placeholder="Your username"
-            value={profile.username}
+            value={profile.username || ''}
             onChange={(e) => setProfile({ ...profile, username: e.target.value })}
             className="w-full p-3 rounded-xl border-2 border-violet-500/30 bg-[#16213e] text-white focus:border-violet-500 outline-none"
           />
@@ -145,7 +145,7 @@ const ProfilePage = () => {
           </label>
           <input
             type="email"
-            value={user.email}
+            value={user.email || ''}
             disabled
             className="w-full p-3 rounded-xl border-2 border-violet-500/30 bg-[#16213e] text-gray-500 cursor-not-allowed"
           />
