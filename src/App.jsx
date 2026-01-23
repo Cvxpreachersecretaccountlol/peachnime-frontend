@@ -3,7 +3,6 @@ import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import ListPage from './pages/ListPage';
-import ProfilePage from './pages/ProfilePage';
 import DetailPage from './pages/DetailPage';
 import WatchPage from './pages/WatchPage';
 import SearchResult from './pages/SearchResult';
@@ -11,6 +10,7 @@ import CharactersPage from './pages/CharactersPage';
 import CharacterInfoPage from './pages/CharacterInfoPage';
 import PeopleInfoPage from './pages/PeopleInfoPage';
 import PageNotFound from './pages/PageNotFound';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
