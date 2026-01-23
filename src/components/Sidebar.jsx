@@ -18,6 +18,7 @@ const Sidebar = () => {
   const list = [
     { name: "Home", link: "/home" },
     { name: "Profile", link: "/profile" },
+    { name: "Continue Watching", link: "/continue-watching" },
     { name: "Subbed Anime", link: "/animes/subbed-anime" },
     { name: "Dubbed Anime", link: "/animes/dubbed-anime" },
     { name: "Most Popular", link: "/animes/most-popular" },

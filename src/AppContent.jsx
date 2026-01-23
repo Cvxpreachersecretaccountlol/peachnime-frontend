@@ -17,6 +17,7 @@ import CharactersPage from "./pages/CharactersPage";
 import ProfilePage from "./pages/ProfilePage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import ContinueWatchingPage from "./pages/ContinueWatchingPage";
 import { AuthProvider } from './context/AuthContext';
 
 const pageVariants = {
@@ -50,12 +51,12 @@ const AppContent = () => {
               <Route path="/anime/:id" element={<DetailPage />} />
               <Route path="/watch/:id" element={<WatchPage />} />
               <Route path="/animes/:type" element={<ListPage />} />
-              <Route path="/animes/:type/:page" element={<ListPage />} />
               <Route path="/search" element={<SearchResult />} />
               <Route path="/characters" element={<CharactersPage />} />
               <Route path="/character/:id" element={<CharacterInfoPage />} />
               <Route path="/people/:id" element={<PeopleInfoPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/continue-watching" element={<ContinueWatchingPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="*" element={<PageNotFound />} />
