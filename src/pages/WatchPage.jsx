@@ -26,9 +26,7 @@ const WatchPage = () => {
       return newParams;
     });
   };
-  // Update document title
 
-  // Auto-redirect to first episode if no `ep` param exists
   useEffect(() => {
     if (!ep && Array.isArray(episodes) && episodes.length > 0) {
       const ep = episodes[0].id.split("ep=").pop();
@@ -65,7 +63,6 @@ const WatchPage = () => {
   const hasPrevEp = Boolean(episodes[currentEp.episodeNumber - 1 - 1]);
 
   return (
-    /* WatchPage.js */
     <div className="bg-backGround pt-14 max-w-screen-xl mx-auto py-2 md:px-2">
       <Helmet>
         <title>
@@ -98,42 +95,29 @@ const WatchPage = () => {
             hasPrevEp={hasPrevEp}
           />
         )}
-        <div className="input w-full mt-2 flex items-end justify-end gap-3 text-end">
-          <div className="btns bg-btnbg flex mx-2 rounded-child">
-            <button
-              className={`row item p-2 ${
-                layout === "row" ? "bg-primary text-black" : undefined
+        <div className="flex justify-end gap-2 px-2 items-center">
+          <p className="text-sm gray">layout:</p>
+          <button onClick={() => setLayout("col")}>
+            <HiMiniViewColumns
+              className={`text-xl ${
+                layout === "col" ? "text-primary" : "text-white"
               }`}
-              onClick={() => setLayout("row")}
-            >
-              <MdTableRows size={"20px"} />
-            </button>
-            <button
-              className={`column item p-2 ${
-                layout === "column" ? "bg-primary text-black" : undefined
-              }`}
-              onClick={() => setLayout("column")}
-            >
-              <HiMiniViewColumns size={"20px"} />
-            </button>
-          </div>
-        </div>
-        <ul
-          className={`episodes max-h-[50vh] py-4 px-2 overflow-scroll bg-lightbg grid gap-1  md:gap-2 ${
-            layout === "row"
-              ? " grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-              : " grid-cols-5 md:grid-cols-10"
-          }`}
-        >
-          {episodes?.map((episode) => (
-            <Episodes
-              key={episode.id}
-              episode={episode}
-              currentEp={currentEp}
-              layout={layout}
             />
-          ))}
-        </ul>
+          </button>
+          <button onClick={() => setLayout("row")}>
+            <MdTableRows
+              className={`text-xl ${
+                layout === "row" ? "text-primary" : "text-white"
+              }`}
+            />
+          </button>
+        </div>
+        <Episodes
+          layout={layout}
+          data={episodes}
+          selectedEp={ep}
+          onClick={updateParams}
+        />
       </div>
     </div>
   );
