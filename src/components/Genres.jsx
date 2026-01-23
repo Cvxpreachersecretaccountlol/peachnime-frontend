@@ -1,34 +1,65 @@
 import { Link } from "react-router-dom";
-import useGenresStore from "../store/genresStore";
 
-const Genres = ({ event, className }) => {
-  const genres = useGenresStore((state) => state.genres);
-
-  const colors = [
-    "#d0e6a5",
-    "#ffbade",
-    "#fc887b",
-    "#ccabda",
-    "#abccd8",
-    "#d8b2ab",
-    "#86e3ce",
+const Genres = () => {
+  const genres = [
+    "action",
+    "adventure",
+    "cars",
+    "comedy",
+    "dementia",
+    "demons",
+    "drama",
+    "ecchi",
+    "fantasy",
+    "game",
+    "harem",
+    "historical",
+    "horror",
+    "isekai",
+    "josei",
+    "kids",
+    "magic",
+    "martial arts",
+    "mecha",
+    "military",
+    "music",
+    "mystery",
+    "parody",
+    "police",
+    "psychological",
+    "romance",
+    "samurai",
+    "school",
+    "sci-fi",
+    "seinen",
+    "shoujo",
+    "shoujo ai",
+    "shounen",
+    "shounen ai",
+    "slice of life",
+    "space",
+    "sports",
+    "super power",
+    "supernatural",
+    "thriller",
+    "vampire",
   ];
 
   return (
-    <ul className={`flex flex-wrap `}>
-      {genres.map((genre, index) => (
-        <li
-          style={{ color: colors[index % colors.length] }}
-          className={`${className} `}
-          key={genre}
-          title={genre}
-        >
-          <Link onClick={event} to={`/animes/genre/${genre}`}>
+    <div className="px-2 pb-4">
+      <h2 className="text-xl font-bold text-primary mb-4">genres</h2>
+      <div className="grid grid-cols-2 gap-2">
+        {genres.map((genre, i) => (
+          <Link
+            key={i}
+            to={`/animes/genre/${genre}`}
+            className="hover:text-primary capitalize text-sm py-1"
+          >
             {genre}
           </Link>
-        </li>
-      ))}
-    </ul>
+        ))}
+      </div>
+    </div>
   );
 };
 
