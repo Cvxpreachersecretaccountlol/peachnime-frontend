@@ -14,8 +14,8 @@ const Player = ({
   changeEpisode,
   hasNextEp,
   hasPrevEp,
-  id, // anime id
-  animeData, // We need to pass anime data from WatchPage
+  id,
+  animeData,
 }) => {
   const { user } = useAuth();
   const [category, setCategory] = useState("sub");
@@ -23,16 +23,23 @@ const Player = ({
   const watchIntervalRef = useRef(null);
 
   useEffect(() => {
-    // Save watch history when episode changes
-    if (user && id && currentEp && animeData) {
-      saveWatchHistory();
-    }
+    // Wait for animeData to load before saving
+    if (user && id && currentEp) {
+      // Delay to ensure animeData is loaded
+      const timer = setTimeout(() => {
+        saveWatchHistory();
+      }, 2000);
 
-    // Track watch time every 10 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [user, id, currentEp?.episodeNumber, animeData]);
+
+  useEffect(() => {
+    // Track watch time
     if (user) {
       watchIntervalRef.current = setInterval(() => {
         updateWatchTime();
-      }, 10000); // Update every 10 seconds
+      }, 10000);
     }
 
     return () => {
@@ -43,16 +50,26 @@ const Player = ({
   }, [user, id, currentEp?.episodeNumber]);
 
   const saveWatchHistory = async () => {
-    if (!user || !id || !currentEp || !animeData) return;
+    if (!user || !id || !currentEp) return;
 
     try {
+      // Get anime title and poster from animeData or use fallback
+      const animeTitle = animeData?.title || id.split('-').slice(0, -1).join(' ');
+      const animePoster = animeData?.poster || '';
+
+      console.log('Saving watch history:', {
+        anime_title: animeTitle,
+        anime_image: animePoster,
+        episode: currentEp.episodeNumber
+      });
+
       await supabase
         .from('watch_history')
         .upsert({
           user_id: user.id,
           anime_id: id,
-          anime_title: animeData.title, // Anime title, not episode title
-          anime_image: animeData.poster, // Anime poster, not episode thumbnail
+          anime_title: animeTitle,
+          anime_image: animePoster,
           episode_number: currentEp.episodeNumber,
           episode_id: episodeId,
           time_watched: 0,
