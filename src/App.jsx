@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import Navbar from './components/Navbar';
+import Root from './pages/Root';
 import Home from './pages/Home';
 import ListPage from './pages/ListPage';
 import DetailPage from './pages/DetailPage';
@@ -16,9 +16,8 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <Navbar />
         <Routes>
-          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/" element={<Root />} />
           <Route path="/home" element={<Home />} />
           <Route path="/animes/:type" element={<ListPage />} />
           <Route path="/anime/:id" element={<DetailPage />} />
