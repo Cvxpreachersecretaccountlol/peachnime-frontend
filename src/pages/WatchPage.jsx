@@ -8,11 +8,18 @@ import PageNotFound from "./PageNotFound";
 import { MdTableRows } from "react-icons/md";
 import { HiMiniViewColumns } from "react-icons/hi2";
 import { Helmet } from "react-helmet";
+import { useAuth } from "../context/AuthContext";
+import { supabase } from "../config/supabase";
+import { FaClock } from "react-icons/fa";
 
 const WatchPage = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [layout, setLayout] = useState("row");
+  const [resumeTime, setResumeTime] = useState(null);
+  const [showResumeMessage, setShowResumeMessage] = useState(false);
+  
   const ep = searchParams.get("ep");
 
   // Fetch episodes
@@ -23,15 +30,39 @@ const WatchPage = () => {
   const { data: animeDataResponse } = useApi(`/anime/${id}`);
   const animeData = animeDataResponse?.data;
 
-  // Debug: Log anime data when it loads
+  // Check if user has watch history for this episode
   useEffect(() => {
-    if (animeData) {
-      console.log('🍑 Anime Data Loaded:', {
-        title: animeData.title,
-        poster: animeData.poster
-      });
+    if (user && id && ep) {
+      checkResumeTime();
     }
-  }, [animeData]);
+  }, [user, id, ep]);
+
+  const checkResumeTime = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('watch_history')
+        .select('time_watched')
+        .eq('user_id', user.id)
+        .eq('anime_id', id)
+        .eq('episode_number', parseInt(ep))
+        .single();
+
+      if (data && data.time_watched > 30) {
+        setResumeTime(data.time_watched);
+        setShowResumeMessage(true);
+        // Hide message after 10 seconds
+        setTimeout(() => setShowResumeMessage(false), 10000);
+      }
+    } catch (error) {
+      // No watch history found
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const updateParams = (newParam) => {
     setSearchParams((prev) => {
@@ -99,6 +130,24 @@ const WatchPage = () => {
           <span className="h-1 w-1 rounded-full bg-primary"></span>
           <h4 className="gray">{`episode ${currentEp.episodeNumber}`}</h4>
         </div>
+
+        {/* Resume Time Message */}
+        {showResumeMessage && resumeTime && (
+          <div className="mx-2 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 border border-violet-500/40 rounded-xl p-4 flex items-center gap-3 animate-pulse">
+            <FaClock className="text-2xl text-violet-400" />
+            <div className="flex-1">
+              <p className="font-bold text-white">Resume from {formatTime(resumeTime)}</p>
+              <p className="text-sm text-gray-300">Seek to this time in the video player to continue where you left off</p>
+            </div>
+            <button
+              onClick={() => setShowResumeMessage(false)}
+              className="text-gray-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {ep && id && (
           <Player
             id={id}
