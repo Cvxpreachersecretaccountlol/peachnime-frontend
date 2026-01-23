@@ -1,7 +1,9 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../config/supabase';
 
 const AuthContext = createContext({});
+
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -20,26 +22,38 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    return { data, error };
-  };
+  const signInWithGoogle = async (turnstileToken) => {
+    if (!turnstileToken) {
+      alert('Please complete the verification');
+      return;
+    }
 
-  const signIn = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    return { data, error };
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/home`,
+        captchaToken: turnstileToken
+      }
+    });
+    
+    if (error) {
+      console.error('Login error:', error);
+      alert('Login failed. Please try again.');
+    }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    return { error };
+    await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut }}>
-      {children}
+    <AuthContext.Provider value={{ 
+      user, 
+      signOut, 
+      signInWithGoogle, 
+      loading
+    }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);
