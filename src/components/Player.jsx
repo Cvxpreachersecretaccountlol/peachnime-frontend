@@ -4,6 +4,8 @@ import {
   TbPlayerTrackPrevFilled,
   TbPlayerTrackNextFilled,
 } from "react-icons/tb";
+import { useAuth } from "../context/AuthContext";
+import { supabase } from "../config/supabase";
 
 const Player = ({
   episodeId,
@@ -11,23 +13,106 @@ const Player = ({
   changeEpisode,
   hasNextEp,
   hasPrevEp,
+  id, // anime id
 }) => {
+  const { user } = useAuth();
   const [category, setCategory] = useState("sub");
   const [server, setServer] = useState("vidWish");
+  const iframeRef = useRef(null);
+  const watchIntervalRef = useRef(null);
+
+  useEffect(() => {
+    // Save watch history when episode changes
+    if (user && id && currentEp) {
+      saveWatchHistory();
+    }
+
+    // Track watch time every 10 seconds
+    if (user) {
+      watchIntervalRef.current = setInterval(() => {
+        updateWatchTime();
+      }, 10000); // Update every 10 seconds
+    }
+
+    return () => {
+      if (watchIntervalRef.current) {
+        clearInterval(watchIntervalRef.current);
+      }
+    };
+  }, [user, id, currentEp?.episodeNumber]);
+
+  const saveWatchHistory = async () => {
+    if (!user || !id || !currentEp) return;
+
+    try {
+      // Get anime details from WatchPage data (we'll need to pass this)
+      const animeId = id;
+      const episodeNumber = currentEp.episodeNumber;
+
+      await supabase
+        .from('watch_history')
+        .upsert({
+          user_id: user.id,
+          anime_id: animeId,
+          anime_title: currentEp.title || id.split('-').slice(0, 2).join(' '),
+          anime_image: currentEp.image || '',
+          episode_number: episodeNumber,
+          episode_id: episodeId,
+          time_watched: 0,
+          total_duration: 1500, // Default 25 min episode
+          last_watched_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,anime_id,episode_number'
+        });
+    } catch (error) {
+      console.error('Error saving watch history:', error);
+    }
+  };
+
+  const updateWatchTime = async () => {
+    if (!user || !id || !currentEp) return;
+
+    try {
+      // Increment watch time by 10 seconds
+      const { data: existing } = await supabase
+        .from('watch_history')
+        .select('time_watched')
+        .eq('user_id', user.id)
+        .eq('anime_id', id)
+        .eq('episode_number', currentEp.episodeNumber)
+        .single();
+
+      if (existing) {
+        await supabase
+          .from('watch_history')
+          .update({
+            time_watched: (existing.time_watched || 0) + 10,
+            last_watched_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .eq('anime_id', id)
+          .eq('episode_number', currentEp.episodeNumber);
+      }
+    } catch (error) {
+      console.error('Error updating watch time:', error);
+    }
+  };
 
   const changeCategory = (newType) => {
     if (newType !== category) {
       setCategory(newType);
     }
   };
+
   function changeServer(newServer) {
     if (newServer !== server) setServer(newServer);
   }
 
   return (
     <>
-      <div className="w-full bg-background aspect-video relative rounded-sm  max-w-screen-xl overflow-hidden">
+      <div className="w-full bg-background aspect-video relative rounded-sm max-w-screen-xl overflow-hidden">
         <iframe
+          ref={iframeRef}
           src={`https://${
             server === "vidWish" ? "vidwish.live" : "megaplay.buzz"
           }/stream/s-2/${episodeId.split("ep=").pop()}/${category}`}
@@ -36,14 +121,14 @@ const Player = ({
           allowFullScreen
         ></iframe>
       </div>
-      <div className="category flex flex-wrap flex-col sm:flex-row items-center justify-center  sm:justify-between px-2 md:px-20 gap-3 bg-lightbg py-2">
+      <div className="category flex flex-wrap flex-col sm:flex-row items-center justify-center sm:justify-between px-2 md:px-20 gap-3 bg-lightbg py-2">
         <div className="servers flex gap-4">
           <button
             onClick={() => changeServer("vidWish")}
             className={`${
               server === "vidWish"
                 ? "bg-primary text-black"
-                : "bg-btnbg  text-white"
+                : "bg-btnbg text-white"
             } px-2 py-1 rounded text-sm font-semibold`}
           >
             vidwish
@@ -53,7 +138,7 @@ const Player = ({
             className={`${
               server === "megaPlay"
                 ? "bg-primary text-black"
-                : "bg-btnbg  text-white"
+                : "bg-btnbg text-white"
             } px-2 py-1 rounded text-sm font-semibold`}
           >
             megaplay
@@ -68,7 +153,7 @@ const Player = ({
                 className={`${
                   category === type
                     ? "bg-primary text-black"
-                    : "bg-btnbg  text-white"
+                    : "bg-btnbg text-white"
                 } px-2 py-1 rounded text-sm font-semibold`}
               >
                 {type.toUpperCase()}
