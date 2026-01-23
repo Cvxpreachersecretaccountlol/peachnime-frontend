@@ -1,0 +1,27 @@
+[33m1a3edd4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Fix App.jsx imports
+[33m918d882[m Fix App.jsx to use correct existing page imports
+[33m9e5db99[m Fix profile page routing and add vercel.json
+[33m3b95607[m Update LoginButton to show profile when logged in
+[33m6c4ef99[m Fix genres - add header and spacing
+[33m2e00e44[m Fix sidebar spacing
+[33m8665fb9[m Profile always visible, shows login if not logged in
+[33m1ee6d24[m Add Login button to Navbar
+[33m17aea31[m Wrap app with AuthProvider
+[33me973e70[m Add Supabase auth
+[33mc2b1ac7[m Update social links (Instagram + Discord)
+[33m2dfb1b7[m Add AdMaven verification file
+[33m3d55e66[m Add comprehensive EasyList-based ad blocker
+[33m18be488[m Fix: Make ad blocker less aggressive
+[33m272d58d[m Block Shopee and suspicious domain ads
+[33mb89763f[m Add redirect blocking to ad blocker
+[33m727700b[m Fix App.jsx syntax error
+[33m237a197[m Recreate AdMaven blocker with video ad blocking
+[33m8b8e24e[m Fix AdMaven blocker integration
+[33m1c8f90c[m Block all ads except AdMaven
+[33ma276c95[m Add all required dependencies
+[33md1ab983[m Fix package.json and complete rebrand to Peachnime
+[33m7543c46[m Fix package.json with proper syntax
+[33maa807bc[m Fix package.json syntax error
+[33m3b99dfc[m Rebrand from Kamanime to Peachnime
+[33mfae7a48[m Fix package.json syntax error
+[33m803997c[m Initial commit - Peachnime frontend

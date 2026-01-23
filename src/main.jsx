@@ -5,7 +5,6 @@ import App from "./App.jsx";
 import "./index.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
 
 const queryCLient = new QueryClient();
@@ -26,9 +25,7 @@ createRoot(document.getElementById("root")).render(
           pauseOnHover
           theme="dark"
         />
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <App />
       </StrictMode>
     </ThemeProvider>
   </QueryClientProvider>
