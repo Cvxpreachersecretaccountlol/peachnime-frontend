@@ -36,7 +36,7 @@ const Sidebar = () => {
 
   return (
     <div
-      className={`sidebar transition-all fixed overflow-scroll h-full z-[100] inset-0 w-64 md:w-80  bg-[rgba(255,255,255,.1);] ${
+      className={`sidebar transition-all fixed overflow-scroll h-full z-[100] inset-0 w-64 md:w-80 bg-[rgba(255,255,255,.1);] ${
         isSidebarOpen ? "translate-x-0" : "translate-x-[-100%]"
       }`}
     >
@@ -49,7 +49,7 @@ const Sidebar = () => {
       </button>
       <ul className="py-4">
         {list.map((item, i) => (
-          <li key={i} className="pl-2">
+          <li key={i} className="pl-2 py-2">
             <Link
               className="hover:text-primary capitalize text-base"
               to={item.link}
