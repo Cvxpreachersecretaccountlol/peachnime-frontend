@@ -22,14 +22,27 @@ const HistoryPage = () => {
   const loadHistory = async () => {
     setLoading(true);
     try {
+      // Get unique anime (group by anime_id, get most recent)
       const { data, error } = await supabase
         .from('watch_history')
-        .select('*')
+        .select('anime_id, anime_title, anime_image, last_watched_at')
         .eq('user_id', user.id)
         .order('last_watched_at', { ascending: false });
 
       if (error) throw error;
-      setHistory(data || []);
+
+      // Remove duplicates (keep only unique anime)
+      const uniqueAnime = [];
+      const seenIds = new Set();
+      
+      data?.forEach(item => {
+        if (!seenIds.has(item.anime_id)) {
+          seenIds.add(item.anime_id);
+          uniqueAnime.push(item);
+        }
+      });
+
+      setHistory(uniqueAnime);
     } catch (error) {
       console.error('Error loading history:', error);
     } finally {
@@ -51,32 +64,6 @@ const HistoryPage = () => {
     } catch (error) {
       alert('Error clearing history: ' + error.message);
     }
-  };
-
-  const deleteItem = async (id) => {
-    try {
-      const { error } = await supabase
-        .from('watch_history')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      setHistory(history.filter(item => item.id !== id));
-    } catch (error) {
-      alert('Error deleting item: ' + error.message);
-    }
-  };
-
-  const formatDate = (timestamp) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now - date;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Yesterday';
-    if (days < 7) return `${days} days ago`;
-    return date.toLocaleDateString();
   };
 
   if (!user) {
@@ -110,7 +97,7 @@ const HistoryPage = () => {
             <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-cyan-500 mb-2 flex items-center gap-3">
               <FaHistory /> Watch History
             </h1>
-            <p className="text-gray-400">{history.length} episodes watched</p>
+            <p className="text-gray-400">{history.length} anime watched</p>
           </div>
           {history.length > 0 && (
             <button
@@ -134,47 +121,24 @@ const HistoryPage = () => {
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
-            {history.map((item) => (
-              <div
-                key={item.id}
-                className="bg-[#1a1a2e] rounded-xl p-4 border border-violet-500/20 hover:border-violet-500/40 transition-all flex gap-4 group"
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {history.map((item, index) => (
+              <Link
+                key={index}
+                to={`/anime/${item.anime_id}`}
+                className="bg-[#1a1a2e] rounded-xl overflow-hidden border border-violet-500/20 hover:border-violet-500/40 transition-all group"
               >
-                <Link to={`/anime/${item.anime_id}`} className="flex-shrink-0">
-                  <img
-                    src={item.anime_image}
-                    alt={item.anime_title}
-                    className="w-24 h-32 object-cover rounded-lg"
-                  />
-                </Link>
-                <div className="flex-1">
-                  <Link to={`/anime/${item.anime_id}`}>
-                    <h3 className="font-bold text-lg mb-1 hover:text-violet-400 transition-colors">
-                      {item.anime_title}
-                    </h3>
-                  </Link>
-                  <p className="text-sm text-gray-400 mb-2">
-                    Episode {item.episode_number}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {formatDate(item.last_watched_at)}
-                  </p>
+                <img
+                  src={item.anime_image}
+                  alt={item.anime_title}
+                  className="w-full h-64 object-cover"
+                />
+                <div className="p-3">
+                  <h3 className="font-bold text-sm line-clamp-2">
+                    {item.anime_title}
+                  </h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Link
-                    to={`/watch/${item.anime_id}?ep=${item.episode_number}`}
-                    className="px-4 py-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all"
-                  >
-                    Watch
-                  </Link>
-                  <button
-                    onClick={() => deleteItem(item.id)}
-                    className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <FaTrash />
-                  </button>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
