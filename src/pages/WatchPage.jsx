@@ -8,7 +8,10 @@ import PageNotFound from "./PageNotFound";
 import { MdTableRows } from "react-icons/md";
 import { HiMiniViewColumns } from "react-icons/hi2";
 import { Helmet } from "react-helmet";
-import CommentSection from "../components/CommentSection";
+
+// Lazy load CommentSection to prevent blocking
+const CommentSection = React.lazy(() => import("../components/CommentSection"));
+import React from "react";
 
 const WatchPage = () => {
   const { id } = useParams();
@@ -97,11 +100,13 @@ const WatchPage = () => {
           />
         )}
 
-        {/* Comment Section - Right after player */}
-        <CommentSection 
-          animeId={id} 
-          episodeNumber={parseInt(ep) || 1}
-        />
+        {/* Comment Section with error boundary */}
+        <React.Suspense fallback={<div className="text-center text-gray-400 py-4">Loading comments...</div>}>
+          <CommentSection 
+            animeId={id} 
+            episodeNumber={parseInt(ep) || 1}
+          />
+        </React.Suspense>
 
         <div className="flex justify-end gap-2 px-2 items-center">
           <p className="text-sm gray">layout:</p>
