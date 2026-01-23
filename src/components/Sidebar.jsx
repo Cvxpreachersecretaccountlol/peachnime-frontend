@@ -1,7 +1,6 @@
 import useSidebarStore from "../store/sidebarStore";
 import { Link, useLocation } from "react-router-dom";
 import Genres from "./Genres";
-
 import { useEffect } from "react";
 import { FaAngleLeft } from "react-icons/fa";
 
@@ -18,6 +17,7 @@ const Sidebar = () => {
 
   const list = [
     { name: "Home", link: "/home" },
+    { name: "Profile", link: "/profile" },
     { name: "Subbed Anime", link: "/animes/subbed-anime" },
     { name: "Dubbed Anime", link: "/animes/dubbed-anime" },
     { name: "Most Popular", link: "/animes/most-popular" },
@@ -48,21 +48,18 @@ const Sidebar = () => {
         <span>close menu</span>
       </button>
       <ul className="py-4">
-        {list.map((item) => (
-          <li
-            key={item.link}
-            onClick={sidebarHandler}
-            className=" py-4 pl-4 hover:text-primary  text-base md:text-lg border-b border-[rgba(255,255,255,.05)] w-full"
-          >
-            <Link to={item.link}>{item.name}</Link>
+        {list.map((item, i) => (
+          <li key={i} className="pl-2">
+            <Link
+              className="hover:text-primary capitalize text-base"
+              to={item.link}
+            >
+              {item.name}
+            </Link>
           </li>
         ))}
-        <li className=" py-4 pl-2 text-base md:text-lg w-full">genres</li>
-        <Genres
-          event={sidebarHandler}
-          className="w-1/2 my-2 pl-2 hover:opacity-[.7]"
-        />
       </ul>
+      <Genres />
     </div>
   );
 };
