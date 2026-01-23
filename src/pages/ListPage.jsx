@@ -31,40 +31,42 @@ const ListPage = () => {
     "genre",
     "producer",
   ];
-  const { category, query = null } = useParams();
-
-  const isValidQuery = validateQueries.includes(category);
+  
+  // Changed from 'category' to 'type' to match the route
+  const { type, page: query = null } = useParams();
+  const isValidQuery = validateQueries.includes(type);
 
   if (!isValidQuery) {
     return <PageNotFound />;
   }
 
-  const endpoint = `/animes/${category}${query ? `/${query}` : ""}?page=`;
+  const endpoint = `/animes/${type}${query ? `/${query}` : ""}?page=`;
   const { data, isError, error, isLoading, hasNextPage, fetchNextPage } =
     useInfiniteApi(endpoint);
 
   if (isError) {
     return <PageNotFound />;
   }
+  
   const pages = data?.pages;
 
   return (
     <div className="list-page pt-14">
       <Helmet>
-        <title>{category} animes</title>
-        <meta property="og:title" content="explore - watanuki" />
+        <title>{type} animes - Peachnime 🍑</title>
+        <meta property="og:title" content={`${type} - Peachnime`} />
       </Helmet>
-      {category === "az-list" && <AZ selected={query} />}
+      {type === "az-list" && <AZ selected={query} />}
       {pages && !isLoading ? (
         <InfiniteScroll
-          dataLength={data?.pages.flat().length || 0} //This is important field to render the next data
+          dataLength={data?.pages.flat().length || 0}
           next={fetchNextPage}
           hasMore={hasNextPage}
           loader={<Loader className="h-fit" />}
           endMessage={<Footer />}
         >
           <Heading>
-            {query ? "" : category} {query} Anime
+            {query ? "" : type} {query} Anime
           </Heading>
           <div className="flex flex-wrap justify-around items-center">
             {pages?.map((page, pageIndex) => (
