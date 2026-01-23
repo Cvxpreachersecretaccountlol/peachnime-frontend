@@ -18,6 +18,8 @@ import ProfilePage from "./pages/ProfilePage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ContinueWatchingPage from "./pages/ContinueWatchingPage";
+import MyListPage from "./pages/MyListPage";
+import HistoryPage from "./pages/HistoryPage";
 import { AuthProvider } from './context/AuthContext';
 
 const pageVariants = {
@@ -57,6 +59,8 @@ const AppContent = () => {
               <Route path="/people/:id" element={<PeopleInfoPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/continue-watching" element={<ContinueWatchingPage />} />
+              <Route path="/my-list" element={<MyListPage />} />
+              <Route path="/history" element={<HistoryPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="*" element={<PageNotFound />} />

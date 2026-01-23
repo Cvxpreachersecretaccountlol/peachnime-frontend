@@ -19,6 +19,8 @@ const Sidebar = () => {
     { name: "Home", link: "/home" },
     { name: "Profile", link: "/profile" },
     { name: "Continue Watching", link: "/continue-watching" },
+    { name: "My List", link: "/my-list" },
+    { name: "History", link: "/history" },
     { name: "Subbed Anime", link: "/animes/subbed-anime" },
     { name: "Dubbed Anime", link: "/animes/dubbed-anime" },
     { name: "Most Popular", link: "/animes/most-popular" },
