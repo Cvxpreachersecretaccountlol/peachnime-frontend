@@ -8,7 +8,7 @@ const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
-  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [usernameError, setUsernameError] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -18,6 +18,21 @@ const AuthPage = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (e.target.name === 'username') {
+      setUsernameError('');
+    }
+  };
+
+  const checkUsername = async (username) => {
+    if (!username) return false;
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('username', username)
+      .single();
+
+    return !!data;
   };
 
   const handleTurnstileVerify = () => {
@@ -42,6 +57,15 @@ const AuthPage = () => {
       return;
     }
 
+    // Check username availability before signup
+    if (!isLogin) {
+      const isTaken = await checkUsername(formData.username);
+      if (isTaken) {
+        setUsernameError('Username is already taken');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -62,23 +86,14 @@ const AuthPage = () => {
           options: {
             data: {
               username: formData.username
-            },
-            emailRedirectTo: `${window.location.origin}/home`
+            }
           }
         });
 
         if (signUpError) throw signUpError;
 
-        // Don't create profile here - let the trigger handle it
-        // Show verification message
-        setShowVerificationMessage(true);
-        setFormData({
-          username: '',
-          email: '',
-          password: '',
-          confirmPassword: ''
-        });
-        setVerified(false);
+        alert('Account created! 🍑 Please check your email to verify your account.');
+        setIsLogin(true);
       }
     } catch (error) {
       alert(error.message);
@@ -105,35 +120,6 @@ const AuthPage = () => {
     }
   };
 
-  if (showVerificationMessage) {
-    return (
-      <div className="min-h-screen bg-[#0a0a1a] text-white flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-[#1a1a2e] rounded-xl p-8 border border-violet-500/20 text-center">
-          <div className="text-6xl mb-6">📧</div>
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-cyan-500 mb-4">
-            Verify Your Email
-          </h1>
-          <p className="text-gray-300 mb-6">
-            We've sent a verification email to <strong>{formData.email || 'your email'}</strong>
-          </p>
-          <p className="text-gray-400 text-sm mb-8">
-            Please check your inbox and click the verification link to activate your account. 
-            Don't forget to check your spam folder!
-          </p>
-          <button
-            onClick={() => {
-              setShowVerificationMessage(false);
-              setIsLogin(true);
-            }}
-            className="w-full p-4 bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all"
-          >
-            Back to Login
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#0a0a1a] text-white flex items-center justify-center p-6">
       <div className="max-w-md w-full">
@@ -156,6 +142,9 @@ const AuthPage = () => {
                 className="w-full p-3 rounded-xl border-2 border-violet-500/30 bg-[#16213e] text-white focus:border-violet-500 outline-none"
                 placeholder="Choose a username"
               />
+              {usernameError && (
+                <p className="text-red-400 text-sm mt-2">{usernameError}</p>
+              )}
             </div>
           )}
 
@@ -238,7 +227,7 @@ const AuthPage = () => {
             onClick={() => {
               setIsLogin(!isLogin);
               setVerified(false);
-              setShowVerificationMessage(false);
+              setUsernameError('');
             }}
             className="w-full text-sm text-gray-400 hover:text-white transition-all"
           >
