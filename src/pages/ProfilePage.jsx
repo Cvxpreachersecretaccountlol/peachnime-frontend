@@ -14,6 +14,7 @@ const ProfilePage = () => {
   const [newUsername, setNewUsername] = useState('');
   const [copied, setCopied] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [avatarKey, setAvatarKey] = useState(Date.now());
 
   useEffect(() => {
     if (!user) {
@@ -38,6 +39,7 @@ const ProfilePage = () => {
       }
       
       setProfile(data);
+      setAvatarKey(Date.now());
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -91,6 +93,7 @@ const ProfilePage = () => {
       alert('Error uploading avatar: ' + error.message);
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -189,7 +192,8 @@ const ProfilePage = () => {
                   <div className="w-full h-full rounded-full bg-[#16213e] flex items-center justify-center overflow-hidden">
                     {profile?.avatar_url ? (
                       <img
-                        src={profile.avatar_url}
+                        key={avatarKey}
+                        src={`${profile.avatar_url}?t=${avatarKey}`}
                         alt="Avatar"
                         className="w-full h-full object-cover"
                       />

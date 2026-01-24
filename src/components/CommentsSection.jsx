@@ -181,9 +181,10 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
 
   const viewFullProfile = () => {
     if (profilePopup) {
+      const userId = profilePopup.userId;
       setProfilePopup(null);
       setIsOpen(false);
-      navigate(`/profile/${profilePopup.userId}`);
+      navigate(`/profile/${userId}`);
     }
   };
 
@@ -381,7 +382,6 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
         </div>
       </div>
 
-      {/* Profile Popup */}
       {profilePopup && (
         <div 
           className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"
