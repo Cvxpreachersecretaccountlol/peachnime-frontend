@@ -2,7 +2,6 @@ import { useState } from "react";
 import { FaAlignJustify } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import LoginButton from "./LoginButton";
 
 const Navbar = () => {
   const [show, setShow] = useState(false);
@@ -46,8 +45,6 @@ const Navbar = () => {
             </li>
           ))}
         </ul>
-        
-        <LoginButton />
       </div>
 
       <div className="block md:hidden relative w-full">
@@ -58,8 +55,6 @@ const Navbar = () => {
               Menu
             </h1>
           </button>
-          
-          <LoginButton />
         </div>
 
         <AnimatePresence>

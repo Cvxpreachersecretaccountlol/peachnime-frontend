@@ -22,6 +22,7 @@ import ContinueWatchingPage from "./pages/ContinueWatchingPage";
 import HistoryPage from "./pages/HistoryPage";
 import MyListPage from "./pages/MyListPage";
 import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
@@ -58,13 +59,45 @@ const AppContent = () => {
               <Route path="/characters/:id" element={<CharactersPage />} />
               <Route path="/character/:id" element={<CharacterInfoPage />} />
               <Route path="/people/:id" element={<PeopleInfoPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
+              
+              {/* Protected Routes */}
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/continue-watching" 
+                element={
+                  <ProtectedRoute>
+                    <ContinueWatchingPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/history" 
+                element={
+                  <ProtectedRoute>
+                    <HistoryPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/my-list" 
+                element={
+                  <ProtectedRoute>
+                    <MyListPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Public Routes */}
               <Route path="/profile/:userId" element={<PublicProfilePage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/continue-watching" element={<ContinueWatchingPage />} />
-              <Route path="/history" element={<HistoryPage />} />
-              <Route path="/my-list" element={<MyListPage />} />
               <Route path="*" element={<PageNotFound />} />
             </Routes>
           </motion.div>
