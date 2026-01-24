@@ -239,9 +239,6 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
               <span className="text-xs text-gray-500 flex-shrink-0">
                 {new Date(comment.created_at).toLocaleDateString()}
               </span>
-              <span className="text-xs bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded">
-                EP {comment.episode_number}
-              </span>
             </div>
 
             <p className="text-gray-300 mb-2 break-words">{comment.comment_text}</p>
