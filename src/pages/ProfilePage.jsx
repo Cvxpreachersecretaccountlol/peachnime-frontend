@@ -2,60 +2,27 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import { useNavigate } from 'react-router-dom';
-import LoginButton from '../components/LoginButton';
+import { Camera, Edit2, Copy, Check, LogOut } from 'lucide-react';
 
 const ProfilePage = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [copied, setCopied] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [profile, setProfile] = useState({
-    username: '',
-    avatar_url: '',
-    last_username_change: null
-  });
-  const [canChangeUsername, setCanChangeUsername] = useState(true);
-  const [cooldownTime, setCooldownTime] = useState('');
 
   useEffect(() => {
-    if (user) {
-      loadProfile();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (profile.last_username_change) {
-      checkCooldown();
-      const interval = setInterval(checkCooldown, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [profile.last_username_change]);
-
-  const checkCooldown = () => {
-    if (!profile.last_username_change) {
-      setCanChangeUsername(true);
+    if (!user) {
+      navigate('/auth');
       return;
     }
+    fetchProfile();
+  }, [user, navigate]);
 
-    const lastChange = new Date(profile.last_username_change);
-    const now = new Date();
-    const timeDiff = now - lastChange;
-    const oneDayMs = 24 * 60 * 60 * 1000;
-
-    if (timeDiff >= oneDayMs) {
-      setCanChangeUsername(true);
-      setCooldownTime('');
-    } else {
-      setCanChangeUsername(false);
-      const remainingMs = oneDayMs - timeDiff;
-      const hours = Math.floor(remainingMs / (60 * 60 * 1000));
-      const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
-      const seconds = Math.floor((remainingMs % (60 * 1000)) / 1000);
-      setCooldownTime(`${hours}h ${minutes}m ${seconds}s`);
-    }
-  };
-
-  const loadProfile = async () => {
+  const fetchProfile = async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -63,49 +30,51 @@ const ProfilePage = () => {
         .eq('id', user.id)
         .single();
 
-      if (data) {
-        setProfile(data);
-      }
+      if (error) throw error;
+      setProfile(data);
+      setNewUsername(data.username);
     } catch (error) {
-      console.log('Profile not found');
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const uploadAvatar = async (event) => {
-    try {
-      setUploading(true);
-      
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('You must select an image to upload.');
-      }
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      const file = event.target.files[0];
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File size must be less than 2MB');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data } = supabase.storage
+      const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Update profile
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: data.publicUrl })
+        .update({ avatar_url: publicUrl })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
 
-      setProfile({ ...profile, avatar_url: data.publicUrl });
-      alert('Avatar updated! 🍑');
+      setProfile({ ...profile, avatar_url: publicUrl });
+      alert('Profile picture updated! 🍑');
     } catch (error) {
       alert('Error uploading avatar: ' + error.message);
     } finally {
@@ -113,143 +82,181 @@ const ProfilePage = () => {
     }
   };
 
-  const updateProfile = async () => {
-    if (!canChangeUsername) {
-      alert(`You can change your username again in ${cooldownTime}`);
+  const handleUsernameUpdate = async () => {
+    if (!newUsername || newUsername === profile.username) {
+      setIsEditingUsername(false);
       return;
     }
 
-    setLoading(true);
     try {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', newUsername)
+        .single();
+
+      if (existing) {
+        alert('Username claimed, change username');
+        return;
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          username: profile.username,
-          last_username_change: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+        .update({ username: newUsername })
         .eq('id', user.id);
 
       if (error) throw error;
-      alert('Username updated! 🍑 (You can change it again in 24 hours)');
-      loadProfile();
+
+      setProfile({ ...profile, username: newUsername });
+      setIsEditingUsername(false);
+      alert('Username updated! 🍑');
     } catch (error) {
-      alert('Error updating profile: ' + error.message);
+      alert('Error updating username: ' + error.message);
     }
-    setLoading(false);
   };
 
-  if (!user) {
+  const copyUserId = () => {
+    navigator.clipboard.writeText(user.id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a1a] text-white flex items-center justify-center p-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-cyan-500 mb-6">
-            🍑 Login to View Profile
-          </h1>
-          <p className="text-gray-400 mb-8">Sign in to customize your profile</p>
-          <LoginButton />
-        </div>
+      <div className="min-h-screen bg-[#0a0a1a] text-white flex items-center justify-center">
+        <div className="text-2xl">Loading... 🍑</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a1a] text-white p-6">
+    <div className="min-h-screen bg-[#0a0a1a] text-white pt-24 pb-12 px-6">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-cyan-500 mb-8">
-          🍑 Profile Settings
+        <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-cyan-500 mb-12 text-center">
+          Profile 🍑
         </h1>
 
-        {/* Avatar Upload */}
-        <div className="bg-[#1a1a2e] rounded-2xl p-6 mb-6 border border-violet-500/20">
-          <label className="block text-sm font-medium text-gray-300 mb-4">
-            Profile Picture
-          </label>
-          <div className="flex items-center gap-6">
+        <div className="bg-[#1a1a2e] rounded-2xl p-8 border border-violet-500/20">
+          {/* Avatar Section */}
+          <div className="flex justify-center mb-8">
             <div className="relative">
-              {profile.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt="Avatar"
-                  className="w-24 h-24 rounded-full object-cover border-4 border-violet-500"
+              <div className="w-32 h-32 rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 p-1">
+                <div className="w-full h-full rounded-full bg-[#16213e] flex items-center justify-center overflow-hidden">
+                  {profile?.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-5xl">🍑</span>
+                  )}
+                </div>
+              </div>
+              <label
+                htmlFor="avatar-upload"
+                className="absolute bottom-0 right-0 w-10 h-10 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-full flex items-center justify-center cursor-pointer hover:shadow-lg hover:shadow-violet-500/50 transition-all"
+              >
+                <Camera size={20} />
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={uploading}
+                  className="hidden"
                 />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 flex items-center justify-center text-4xl">
-                  🍑
+              </label>
+              {uploading && (
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                  <div className="text-sm">Uploading...</div>
                 </div>
               )}
             </div>
-            <label className="cursor-pointer px-6 py-3 bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all">
-              {uploading ? 'Uploading...' : 'Choose Photo'}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={uploadAvatar}
-                disabled={uploading}
-                className="hidden"
-              />
-            </label>
           </div>
-        </div>
 
-        {/* Username */}
-        <div className="bg-[#1a1a2e] rounded-2xl p-6 mb-6 border border-violet-500/20">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Username {!canChangeUsername && (
-              <span className="text-red-400 text-xs ml-2">
-                (Cooldown: {cooldownTime})
-              </span>
+          {/* Username Section */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Username
+            </label>
+            <div className="flex items-center gap-3">
+              {isEditingUsername ? (
+                <>
+                  <input
+                    type="text"
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    className="flex-1 p-3 rounded-xl border-2 border-violet-500/30 bg-[#16213e] text-white focus:border-violet-500 outline-none"
+                    placeholder="Enter new username"
+                  />
+                  <button
+                    onClick={handleUsernameUpdate}
+                    className="px-6 py-3 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-xl font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditingUsername(false);
+                      setNewUsername(profile.username);
+                    }}
+                    className="px-6 py-3 bg-gray-700 rounded-xl font-bold hover:bg-gray-600 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="flex-1 p-3 rounded-xl bg-[#16213e] text-white text-lg">
+                    {profile?.username || 'No username'}
+                  </div>
+                  <button
+                    onClick={() => setIsEditingUsername(true)}
+                    className="p-3 bg-violet-500/20 rounded-xl hover:bg-violet-500/30 transition-all"
+                  >
+                    <Edit2 size={20} />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* User ID Section */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              User ID
+            </label>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 p-3 rounded-xl bg-[#16213e] text-white font-mono text-sm overflow-hidden text-ellipsis">
+                {user?.id}
+              </div>
+              <button
+                onClick={copyUserId}
+                className="p-3 bg-violet-500/20 rounded-xl hover:bg-violet-500/30 transition-all"
+              >
+                {copied ? <Check size={20} className="text-green-400" /> : <Copy size={20} />}
+              </button>
+            </div>
+            {copied && (
+              <p className="text-green-400 text-sm mt-2">Copied to clipboard! ✓</p>
             )}
-          </label>
-          <input
-            type="text"
-            placeholder="Your username"
-            value={profile.username || ''}
-            onChange={(e) => setProfile({ ...profile, username: e.target.value })}
-            disabled={!canChangeUsername}
-            className={`w-full p-3 rounded-xl border-2 ${
-              canChangeUsername 
-                ? 'border-violet-500/30 bg-[#16213e]' 
-                : 'border-red-500/30 bg-[#16213e] opacity-50 cursor-not-allowed'
-            } text-white focus:border-violet-500 outline-none`}
-          />
-          {!canChangeUsername && (
-            <p className="text-xs text-red-400 mt-2">
-              You can change your username again in {cooldownTime}
-            </p>
-          )}
+          </div>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleSignOut}
+            className="w-full p-4 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+          >
+            <LogOut size={20} />
+            Logout
+          </button>
         </div>
-
-        {/* Email */}
-        <div className="bg-[#1a1a2e] rounded-2xl p-6 mb-6 border border-violet-500/20">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Email
-          </label>
-          <input
-            type="email"
-            value={user.email || ''}
-            disabled
-            className="w-full p-3 rounded-xl border-2 border-violet-500/30 bg-[#16213e] text-gray-500 cursor-not-allowed"
-          />
-        </div>
-
-        <button
-          onClick={updateProfile}
-          disabled={loading || !canChangeUsername}
-          className="w-full p-4 bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-4"
-        >
-          {loading ? 'Saving...' : 'Save Username 🍑'}
-        </button>
-
-        <button
-          onClick={() => {
-            signOut();
-            navigate('/home');
-          }}
-          className="w-full p-4 bg-red-500/20 text-red-400 rounded-xl font-bold hover:bg-red-500/30 transition-all"
-        >
-          Logout
-        </button>
       </div>
     </div>
   );
