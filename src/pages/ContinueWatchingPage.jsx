@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaPlay, FaClock, FaTrash } from 'react-icons/fa';
 import Loader from '../components/Loader';
 
@@ -68,6 +68,13 @@ const ContinueWatchingPage = () => {
     }
   };
 
+  const handleWatch = (animeId, episodeNumber) => {
+    // Scroll to top before navigating
+    window.scrollTo(0, 0);
+    // Navigate to watch page
+    navigate(`/watch/${animeId}?ep=${episodeNumber}`);
+  };
+
   const formatTime = (seconds) => {
     if (!seconds) return '0:00';
     const mins = Math.floor(seconds / 60);
@@ -110,33 +117,36 @@ const ContinueWatchingPage = () => {
             <FaPlay className="text-6xl text-gray-600 mx-auto mb-6" />
             <p className="text-gray-400 text-xl mb-6">No watch history yet</p>
             <p className="text-sm text-gray-500 mb-6">Start watching anime to see your progress here!</p>
-            <Link
-              to="/home"
-              className="px-8 py-4 bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all inline-block"
+            <button
+              onClick={() => navigate('/home')}
+              className="px-8 py-4 bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all"
             >
               Start Watching 🍑
-            </Link>
+            </button>
           </div>
         ) : (
           <div className="space-y-3">
             {watchHistory.map((item) => (
               <div
                 key={item.id}
-                onClick={() => navigate(`/watch/${item.anime_id}?ep=${item.episode_number}`)}
+                onClick={() => handleWatch(item.anime_id, item.episode_number)}
                 className="bg-[#1a1a2e] rounded-xl p-4 border border-violet-500/20 hover:border-violet-500/40 transition-all flex gap-4 items-center group cursor-pointer"
               >
                 <img
                   src={item.anime_image || '/placeholder.png'}
                   alt={item.anime_title}
                   className="w-20 h-28 object-cover rounded-lg flex-shrink-0"
+                  onError={(e) => {
+                    e.target.src = '/placeholder.png';
+                  }}
                 />
 
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-lg mb-1 group-hover:text-violet-400 transition-colors line-clamp-1">
-                    {item.anime_title}
+                    {item.anime_title || 'Unknown Anime'}
                   </h3>
                   <p className="text-sm text-violet-400 mb-1">
-                    Episode {item.episode_number}
+                    Episode {item.episode_number || 1}
                   </p>
                   <p className="text-xs text-gray-500 flex items-center gap-1">
                     <FaClock className="text-violet-400" />
