@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Edit2, Copy, Check, LogOut, X } from 'lucide-react';
+import { Edit2, Copy, Check, LogOut, X } from 'lucide-react';
 
 const ProfilePage = () => {
   const { user, signOut } = useAuth();
@@ -13,8 +13,6 @@ const ProfilePage = () => {
   const [oldUsername, setOldUsername] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [copied, setCopied] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [avatarKey, setAvatarKey] = useState(Date.now());
 
   useEffect(() => {
     if (!user) {
@@ -39,61 +37,10 @@ const ProfilePage = () => {
       }
       
       setProfile(data);
-      setAvatarKey(Date.now());
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAvatarUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      alert('File size must be less than 2MB');
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
-
-      if (updateError) {
-        console.error('Update error:', updateError);
-        throw updateError;
-      }
-
-      await fetchProfile();
-      alert('Profile picture updated! 🍑');
-    } catch (error) {
-      console.error('Error in avatar upload:', error);
-      alert('Error uploading avatar: ' + error.message);
-    } finally {
-      setUploading(false);
-      e.target.value = '';
     }
   };
 
@@ -187,40 +134,18 @@ const ProfilePage = () => {
 
           <div className="bg-[#1a1a2e] rounded-2xl p-8 border border-violet-500/20">
             <div className="flex justify-center mb-8">
-              <div className="relative">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 p-1">
-                  <div className="w-full h-full rounded-full bg-[#16213e] flex items-center justify-center overflow-hidden">
-                    {profile?.avatar_url ? (
-                      <img
-                        key={avatarKey}
-                        src={`${profile.avatar_url}?t=${avatarKey}`}
-                        alt="Avatar"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-5xl">🍑</span>
-                    )}
-                  </div>
+              <div className="w-32 h-32 rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 p-1">
+                <div className="w-full h-full rounded-full bg-[#16213e] flex items-center justify-center overflow-hidden">
+                  {profile?.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-5xl">🍑</span>
+                  )}
                 </div>
-                <label
-                  htmlFor="avatar-upload"
-                  className="absolute bottom-0 right-0 w-10 h-10 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-full flex items-center justify-center cursor-pointer hover:shadow-lg hover:shadow-violet-500/50 transition-all"
-                >
-                  <Camera size={20} />
-                  <input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    disabled={uploading}
-                    className="hidden"
-                  />
-                </label>
-                {uploading && (
-                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                    <div className="text-sm">Uploading...</div>
-                  </div>
-                )}
               </div>
             </div>
 
