@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../config/supabase';
 import { useAuth } from '../context/AuthContext';
-import { Heart, MessageCircle, Send, X } from 'lucide-react';
+import { Heart, MessageCircle, Send, X, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const CommentsSection = ({ animeId, episodeNumber }) => {
@@ -30,7 +30,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
   const fetchComments = async () => {
     const { data, error } = await supabase
       .from('comments')
-      .select('*, comment_likes(count)')
+      .select('*')
       .eq('anime_id', animeId)
       .eq('episode_number', episodeNumber)
       .is('parent_comment_id', null)
@@ -45,7 +45,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
   const fetchReplies = async (commentId) => {
     const { data } = await supabase
       .from('comments')
-      .select('*, comment_likes(count)')
+      .select('*')
       .eq('parent_comment_id', commentId)
       .order('created_at', { ascending: true });
     return data || [];
@@ -60,33 +60,39 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
     if (!newComment.trim()) return;
 
     setLoading(true);
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('username, avatar_url')
-      .eq('id', user.id)
-      .single();
+    
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', user.id)
+        .single();
 
-    const { error } = await supabase.from('comments').insert([
-      {
-        anime_id: animeId,
-        episode_number: episodeNumber,
-        user_id: user.id,
-        username: profile?.username || 'Anonymous',
-        avatar_url: profile?.avatar_url,
-        comment: newComment,
-        parent_comment_id: replyTo?.id || null
-      }
-    ]);
+      const { error } = await supabase.from('comments').insert([
+        {
+          anime_id: animeId,
+          episode_number: episodeNumber,
+          user_id: user.id,
+          username: profile?.username || 'Anonymous',
+          avatar_url: profile?.avatar_url,
+          comment: newComment,
+          parent_comment_id: replyTo?.id || null
+        }
+      ]);
 
-    if (!error) {
+      if (error) throw error;
+
       setNewComment('');
       setReplyTo(null);
-      fetchComments();
+      await fetchComments();
+    } catch (error) {
+      alert('Error posting comment: ' + error.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  const handleLike = async (commentId) => {
+  const handleLike = async (commentId, currentLikes) => {
     if (!user) {
       navigate('/auth');
       return;
@@ -101,17 +107,33 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
 
     if (existing) {
       await supabase.from('comment_likes').delete().eq('id', existing.id);
-      await supabase.rpc('decrement_comment_likes', { comment_id: commentId });
+      await supabase.from('comments').update({ likes: Math.max(0, currentLikes - 1) }).eq('id', commentId);
     } else {
       await supabase.from('comment_likes').insert({ comment_id: commentId, user_id: user.id });
-      await supabase.rpc('increment_comment_likes', { comment_id: commentId });
+      await supabase.from('comments').update({ likes: (currentLikes || 0) + 1 }).eq('id', commentId);
     }
     fetchComments();
+  };
+
+  const checkIfLiked = async (commentId) => {
+    if (!user) return false;
+    const { data } = await supabase
+      .from('comment_likes')
+      .select()
+      .eq('comment_id', commentId)
+      .eq('user_id', user.id)
+      .single();
+    return !!data;
   };
 
   const Comment = ({ comment, isReply = false }) => {
     const [showReplies, setShowReplies] = useState(false);
     const [replies, setReplies] = useState([]);
+    const [isLiked, setIsLiked] = useState(false);
+
+    useEffect(() => {
+      checkIfLiked(comment.id).then(setIsLiked);
+    }, [comment.id]);
 
     const loadReplies = async () => {
       const data = await fetchReplies(comment.id);
@@ -120,11 +142,11 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
     };
 
     return (
-      <div className={`${isReply ? 'ml-12' : ''} mb-4`}>
+      <div className={`${isReply ? 'ml-8 sm:ml-12' : ''} mb-4`}>
         <div className="flex gap-3">
           <div
             onClick={() => navigate(`/profile/${comment.user_id}`)}
-            className="cursor-pointer"
+            className="cursor-pointer flex-shrink-0"
           >
             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 p-0.5">
               <div className="w-full h-full rounded-full bg-[#16213e] flex items-center justify-center overflow-hidden">
@@ -137,27 +159,27 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
             </div>
           </div>
 
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span
                 onClick={() => navigate(`/profile/${comment.user_id}`)}
-                className="font-semibold text-white cursor-pointer hover:text-violet-400"
+                className="font-semibold text-white cursor-pointer hover:text-violet-400 truncate"
               >
                 {comment.username}
               </span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 flex-shrink-0">
                 {new Date(comment.created_at).toLocaleDateString()}
               </span>
             </div>
 
-            <p className="text-gray-300 mb-2">{comment.comment}</p>
+            <p className="text-gray-300 mb-2 break-words">{comment.comment}</p>
 
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-4 text-sm flex-wrap">
               <button
-                onClick={() => handleLike(comment.id)}
+                onClick={() => handleLike(comment.id, comment.likes)}
                 className="flex items-center gap-1 text-gray-400 hover:text-red-400 transition-all"
               >
-                <Heart size={16} className={user && comment.comment_likes?.some(l => l.user_id === user.id) ? 'fill-red-400 text-red-400' : ''} />
+                <Heart size={16} className={isLiked ? 'fill-red-400 text-red-400' : ''} />
                 <span>{comment.likes || 0}</span>
               </button>
 
@@ -182,7 +204,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
             </div>
 
             {showReplies && replies.length > 0 && (
-              <div className="mt-4">
+              <div className="mt-4 space-y-4">
                 {replies.map(reply => (
                   <Comment key={reply.id} comment={reply} isReply={true} />
                 ))}
@@ -196,42 +218,50 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
 
   if (!isOpen) {
     return (
-      <div
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-[#1a1a2e] border border-violet-500/30 rounded-xl p-4 cursor-pointer hover:border-violet-500 transition-all max-w-sm shadow-lg"
-      >
-        {latestComment ? (
-          <div className="flex gap-3 items-start">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 p-0.5 flex-shrink-0">
-              <div className="w-full h-full rounded-full bg-[#16213e] flex items-center justify-center overflow-hidden">
-                {latestComment.avatar_url ? (
-                  <img src={latestComment.avatar_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-sm">🍑</span>
-                )}
+      <div className="flex justify-center my-8 px-4">
+        <div
+          onClick={() => setIsOpen(true)}
+          className="w-full max-w-2xl bg-[#1a1a2e] border border-violet-500/30 rounded-xl p-4 cursor-pointer hover:border-violet-500 transition-all shadow-lg"
+        >
+          {latestComment ? (
+            <div className="flex gap-3 items-start">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 p-0.5 flex-shrink-0">
+                <div className="w-full h-full rounded-full bg-[#16213e] flex items-center justify-center overflow-hidden">
+                  {latestComment.avatar_url ? (
+                    <img src={latestComment.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-sm">🍑</span>
+                  )}
+                </div>
               </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate">{latestComment.username}</p>
+                <p className="text-xs text-gray-400 truncate">{latestComment.comment}</p>
+              </div>
+              <MessageCircle size={20} className="text-violet-400 flex-shrink-0" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{latestComment.username}</p>
-              <p className="text-xs text-gray-400 truncate">{latestComment.comment}</p>
+          ) : (
+            <div className="flex items-center gap-2 text-gray-400 justify-center">
+              <MessageCircle size={20} />
+              <span className="text-sm">No comments yet. Be the first!</span>
             </div>
-            <MessageCircle size={20} className="text-violet-400 flex-shrink-0" />
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 text-gray-400">
-            <MessageCircle size={20} />
-            <span className="text-sm">No comments yet. Be the first!</span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
-      <div className="bg-[#0a0a1a] w-full sm:max-w-2xl h-full sm:h-[80vh] sm:rounded-2xl flex flex-col">
+    <div className="flex justify-center my-8 px-4">
+      <div className="bg-[#1a1a2e] w-full max-w-2xl rounded-2xl border border-violet-500/20 flex flex-col max-h-[80vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-violet-500/20">
+          <button
+            onClick={() => setIsOpen(false)}
+            className="p-2 hover:bg-violet-500/20 rounded-lg transition-all"
+          >
+            <ArrowLeft size={24} className="text-gray-400" />
+          </button>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <MessageCircle size={24} className="text-violet-400" />
             {comments.length} Comments
@@ -257,7 +287,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-violet-500/20">
+        <div className="p-4 border-t border-violet-500/20 bg-[#16213e]">
           {replyTo && (
             <div className="mb-2 flex items-center justify-between bg-violet-500/10 p-2 rounded-lg">
               <span className="text-sm text-gray-400">
@@ -273,15 +303,17 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
               type="text"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add comment..."
-              className="flex-1 p-3 rounded-xl border-2 border-violet-500/30 bg-[#16213e] text-white focus:border-violet-500 outline-none"
+              placeholder={user ? "Add comment..." : "Login to comment"}
+              disabled={!user}
+              className="flex-1 p-3 rounded-xl border-2 border-violet-500/30 bg-[#0a0a1a] text-white focus:border-violet-500 outline-none disabled:opacity-50"
             />
             <button
               type="submit"
-              disabled={loading || !newComment.trim()}
-              className="p-3 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-xl hover:shadow-lg hover:shadow-violet-500/50 transition-all disabled:opacity-50"
+              disabled={loading || !newComment.trim() || !user}
+              className="px-4 py-3 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-xl hover:shadow-lg hover:shadow-violet-500/50 transition-all disabled:opacity-50 flex items-center gap-2"
             >
               <Send size={20} />
+              <span className="hidden sm:inline">Post</span>
             </button>
           </form>
         </div>
