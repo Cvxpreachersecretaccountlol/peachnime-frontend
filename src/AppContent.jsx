@@ -15,11 +15,10 @@ import PeopleInfoPage from "./pages/PeopleInfoPage";
 import CharacterInfoPage from "./pages/CharacterInfoPage";
 import CharactersPage from "./pages/CharactersPage";
 import ProfilePage from "./pages/ProfilePage";
+import PublicProfilePage from "./pages/PublicProfilePage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ContinueWatchingPage from "./pages/ContinueWatchingPage";
-import MyListPage from "./pages/MyListPage";
-import HistoryPage from "./pages/HistoryPage";
 import { AuthProvider } from './context/AuthContext';
 
 const pageVariants = {
@@ -58,11 +57,10 @@ const AppContent = () => {
               <Route path="/character/:id" element={<CharacterInfoPage />} />
               <Route path="/people/:id" element={<PeopleInfoPage />} />
               <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/continue-watching" element={<ContinueWatchingPage />} />
-              <Route path="/my-list" element={<MyListPage />} />
-              <Route path="/history" element={<HistoryPage />} />
+              <Route path="/profile/:userId" element={<PublicProfilePage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/continue-watching" element={<ContinueWatchingPage />} />
               <Route path="*" element={<PageNotFound />} />
             </Routes>
           </motion.div>

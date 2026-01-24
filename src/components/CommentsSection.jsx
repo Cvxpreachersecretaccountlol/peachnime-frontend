@@ -183,7 +183,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
     if (profilePopup) {
       setProfilePopup(null);
       setIsOpen(false);
-      navigate('/profile');
+      navigate(`/profile/${profilePopup.userId}`);
     }
   };
 
