@@ -75,7 +75,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
           user_id: user.id,
           username: profile?.username || 'Anonymous',
           avatar_url: profile?.avatar_url,
-          comment: newComment,
+          comment_text: newComment,
           parent_comment_id: replyTo?.id || null
         }
       ]);
@@ -172,7 +172,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
               </span>
             </div>
 
-            <p className="text-gray-300 mb-2 break-words">{comment.comment}</p>
+            <p className="text-gray-300 mb-2 break-words">{comment.comment_text}</p>
 
             <div className="flex items-center gap-4 text-sm flex-wrap">
               <button
@@ -236,7 +236,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white truncate">{latestComment.username}</p>
-                <p className="text-xs text-gray-400 truncate">{latestComment.comment}</p>
+                <p className="text-xs text-gray-400 truncate">{latestComment.comment_text}</p>
               </div>
               <MessageCircle size={20} className="text-violet-400 flex-shrink-0" />
             </div>
@@ -253,9 +253,8 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
 
   return (
     <div className="flex justify-center my-8 px-4">
-      <div className="bg-[#1a1a2e] w-full max-w-2xl rounded-2xl border border-violet-500/20 flex flex-col max-h-[80vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-violet-500/20">
+      <div className="bg-[#1a1a2e] w-full max-w-2xl rounded-2xl border border-violet-500/20 flex flex-col" style={{ maxHeight: '80vh' }}>
+        <div className="flex items-center justify-between p-4 border-b border-violet-500/20 flex-shrink-0">
           <button
             onClick={() => setIsOpen(false)}
             className="p-2 hover:bg-violet-500/20 rounded-lg transition-all"
@@ -274,8 +273,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
           </button>
         </div>
 
-        {/* Comments List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ minHeight: 0 }}>
           {comments.map(comment => (
             <Comment key={comment.id} comment={comment} />
           ))}
@@ -286,14 +284,13 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
           )}
         </div>
 
-        {/* Input */}
-        <div className="p-4 border-t border-violet-500/20 bg-[#16213e]">
+        <div className="p-3 border-t border-violet-500/20 bg-[#16213e] flex-shrink-0">
           {replyTo && (
             <div className="mb-2 flex items-center justify-between bg-violet-500/10 p-2 rounded-lg">
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-gray-400 truncate flex-1">
                 Replying to <span className="text-violet-400">{replyTo.username}</span>
               </span>
-              <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-white">
+              <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-white ml-2 flex-shrink-0">
                 <X size={16} />
               </button>
             </div>
@@ -305,15 +302,14 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
               onChange={(e) => setNewComment(e.target.value)}
               placeholder={user ? "Add comment..." : "Login to comment"}
               disabled={!user}
-              className="flex-1 p-3 rounded-xl border-2 border-violet-500/30 bg-[#0a0a1a] text-white focus:border-violet-500 outline-none disabled:opacity-50"
+              className="flex-1 min-w-0 p-2.5 rounded-xl border-2 border-violet-500/30 bg-[#0a0a1a] text-white text-sm focus:border-violet-500 outline-none disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={loading || !newComment.trim() || !user}
-              className="px-4 py-3 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-xl hover:shadow-lg hover:shadow-violet-500/50 transition-all disabled:opacity-50 flex items-center gap-2"
+              className="px-3 py-2.5 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-xl hover:shadow-lg hover:shadow-violet-500/50 transition-all disabled:opacity-50 flex-shrink-0"
             >
-              <Send size={20} />
-              <span className="hidden sm:inline">Post</span>
+              <Send size={18} />
             </button>
           </form>
         </div>
