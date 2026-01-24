@@ -1,81 +1,91 @@
-import { Link } from "react-router-dom";
 import useSidebarStore from "../store/sidebarStore";
-import { X } from "lucide-react";
-import { FaDiscord, FaInstagram } from "react-icons/fa6";
+import { Link, useLocation } from "react-router-dom";
+import Genres from "./Genres";
+import { useEffect } from "react";
+import { FaAngleLeft, FaDiscord, FaInstagram } from "react-icons/fa";
 
 const Sidebar = () => {
-  const { isSidebarOpen, toggleSidebar } = useSidebarStore();
+  const isSidebarOpen = useSidebarStore((state) => state.isSidebarOpen);
+  const sidebarHandler = useSidebarStore((state) => state.toggleSidebar);
 
-  const menuItems = [
-    { name: "Home", path: "/home" },
-    { name: "Subbed Anime", path: "/animes/sub" },
-    { name: "Dubbed Anime", path: "/animes/dub" },
-    { name: "Most Popular", path: "/animes/most-popular" },
-    { name: "Movies", path: "/animes/movie" },
-    { name: "TV Series", path: "/animes/tv" },
-    { name: "OVAs", path: "/animes/ova" },
-    { name: "ONAs", path: "/animes/ona" },
+  const location = useLocation();
+  const key = location.key;
+
+  useEffect(() => {
+    isSidebarOpen ? sidebarHandler() : null;
+  }, [key]);
+
+  const list = [
+    { name: "Home", link: "/home" },
+    { name: "Profile", link: "/profile" },
+    { name: "Continue Watching", link: "/continue-watching" },
+    { name: "My List", link: "/my-list" },
+    { name: "History", link: "/history" },
+    { name: "Subbed Anime", link: "/animes/subbed-anime" },
+    { name: "Dubbed Anime", link: "/animes/dubbed-anime" },
+    { name: "Most Popular", link: "/animes/most-popular" },
+    { name: "Top Airing", link: "/animes/top-airing" },
+    { name: "most favorite", link: "/animes/most-favorite" },
+    { name: "latest completed", link: "/animes/completed" },
+    { name: "recently added", link: "/animes/recently-added" },
+    { name: "recently updated", link: "/animes/recently-updated" },
+    { name: "top upcoming", link: "/animes/top-upcoming" },
+    { name: "A-Z List", link: "/animes/az-list/a" },
+    { name: "Movies", link: "/animes/movie" },
+    { name: "OVAs", link: "/animes/ova" },
+    { name: "ONAs", link: "/animes/ona" },
+    { name: "Specials", link: "/animes/special" },
   ];
 
   return (
-    <>
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40"
-          onClick={toggleSidebar}
-        ></div>
-      )}
-
-      <div
-        className={`fixed top-0 left-0 h-full w-80 bg-[#1a1a2e] z-50 transform transition-transform duration-300 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } overflow-y-auto`}
+    <div
+      className={`sidebar transition-all fixed overflow-scroll h-full z-[100] inset-0 w-64 md:w-80 bg-[rgba(10,10,15,0.95)] backdrop-blur-xl ${
+        isSidebarOpen ? "translate-x-0" : "translate-x-[-100%]"
+      }`}
+    >
+      <button
+        className="w-full pt-4 pl-2 flex items-center gap-2 hover:text-primary text-base md:text-xl"
+        onClick={sidebarHandler}
       >
-        <div className="p-6">
-          <button
-            onClick={toggleSidebar}
-            className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-all"
-          >
-            <X size={24} />
-            <span className="text-lg">Close menu</span>
-          </button>
+        <FaAngleLeft />
+        <span>close menu</span>
+      </button>
 
-          <div className="flex gap-4 mb-8">
-            <a
-              href="https://discord.gg/ajv9JQbMGb"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 p-3 bg-[#5865F2] rounded-xl hover:bg-[#4752C4] transition-all"
-            >
-              <FaDiscord size={24} />
-              <span className="font-semibold">Discord</span>
-            </a>
-            <a
-              href="https://www.instagram.com/peachnime.insta?igsh=dWcwZjI3NXl3OG92"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-xl hover:shadow-lg transition-all"
-            >
-              <FaInstagram size={24} />
-              <span className="font-semibold">Instagram</span>
-            </a>
-          </div>
-
-          <nav className="space-y-2">
-            {menuItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                onClick={toggleSidebar}
-                className="block px-4 py-3 text-white hover:bg-violet-500/20 rounded-xl transition-all text-lg"
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
-        </div>
+      <div className="px-2 py-4 flex gap-2">
+        <a
+          href="https://discord.gg/ajv9JQbMGb"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-2 p-3 bg-[#5865F2] rounded-xl hover:bg-[#4752C4] transition-all"
+        >
+          <FaDiscord size={20} />
+          <span className="font-semibold text-sm">Discord</span>
+        </a>
+        <a
+          href="https://www.instagram.com/peachnime.insta?igsh=dWcwZjI3NXl3OG92"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-xl hover:shadow-lg transition-all"
+        >
+          <FaInstagram size={20} />
+          <span className="font-semibold text-sm">Instagram</span>
+        </a>
       </div>
-    </>
+
+      <ul className="py-4">
+        {list.map((item, i) => (
+          <li key={i} className="pl-2 py-2">
+            <Link
+              className="hover:text-primary capitalize text-base"
+              to={item.link}
+            >
+              {item.name}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <Genres />
+    </div>
   );
 };
 
