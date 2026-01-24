@@ -23,6 +23,11 @@ const WatchPage = () => {
 
   const ep = searchParams.get("ep");
 
+  // Scroll to top when page loads or episode changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [id, ep]);
+
   const { data, isError } = useApi(`/episodes/${id}`);
   const episodes = data?.data;
 
@@ -200,3 +205,4 @@ const WatchPage = () => {
 };
 
 export default WatchPage;
+
