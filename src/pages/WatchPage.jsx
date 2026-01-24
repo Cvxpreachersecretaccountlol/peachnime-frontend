@@ -20,17 +20,16 @@ const WatchPage = () => {
   const [layout, setLayout] = useState("row");
   const [resumeTime, setResumeTime] = useState(null);
   const [showResumeMessage, setShowResumeMessage] = useState(false);
-
   const ep = searchParams.get("ep");
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id, ep]);
 
-  const { data, isError } = useApi(`/episodes/${id}`);
+  const { data, isError, isLoading } = useApi(`/episodes/${id}`);
   const episodes = data?.data;
-
-  const { data: animeDataResponse } = useApi(`/anime/${id}`);
+  
+  const { data: animeDataResponse, isLoading: animeLoading } = useApi(`/anime/${id}`);
   const animeData = animeDataResponse?.data;
 
   useEffect(() => {
@@ -64,7 +63,7 @@ const WatchPage = () => {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-
+  
   const updateParams = (newParam) => {
     setSearchParams((prev) => {
       const newParams = new URLSearchParams(prev);
@@ -72,19 +71,19 @@ const WatchPage = () => {
       return newParams;
     });
   };
-
+  
   useEffect(() => {
     if (!ep && Array.isArray(episodes) && episodes.length > 0) {
       const ep = episodes[0].id.split("ep=").pop();
       updateParams(ep);
     }
-  }, [ep, episodes, setSearchParams]);
+  }, [ep, episodes]);
 
   if (isError) {
     return <PageNotFound />;
   }
 
-  if (!episodes) {
+  if (isLoading || !episodes || animeLoading) {
     return <Loader className="h-screen" />;
   }
 
@@ -92,6 +91,10 @@ const WatchPage = () => {
     episodes &&
     ep !== null &&
     episodes.find((e) => e.id.split("ep=").pop() === ep);
+
+  if (!currentEp) {
+    return <Loader className="h-screen" />;
+  }
 
   const changeEpisode = (action) => {
     if (action === "next") {
@@ -104,12 +107,12 @@ const WatchPage = () => {
       updateParams(prevEp.id.split("ep=").pop());
     }
   };
-
+  
   const hasNextEp = Boolean(episodes[currentEp.episodeNumber - 1 + 1]);
   const hasPrevEp = Boolean(episodes[currentEp.episodeNumber - 1 - 1]);
 
   return (
-    <div className="bg-backGround pt-14 max-w-screen-xl mx-auto py-2 md:px-2">
+    <div className="bg-backGround pt-20 min-h-screen max-w-screen-xl mx-auto py-2 md:px-2">
       <Helmet>
         <title>
           Watch {id.split("-").slice(0, 2).join(" ")} Online, Free Anime
@@ -148,7 +151,7 @@ const WatchPage = () => {
           </div>
         )}
 
-        {ep && id && (
+        {ep && id && currentEp && (
           <Player
             id={id}
             episodeId={`${id}?ep=${ep}`}
@@ -159,6 +162,7 @@ const WatchPage = () => {
             animeData={animeData}
           />
         )}
+        
         <div className="input w-full mt-2 flex items-end justify-end gap-3 text-end">
           <div className="btns bg-btnbg flex mx-2 rounded-child">
             <button
@@ -179,6 +183,7 @@ const WatchPage = () => {
             </button>
           </div>
         </div>
+        
         <ul
           className={`episodes max-h-[50vh] py-4 px-2 overflow-scroll bg-lightbg grid gap-1  md:gap-2 ${
             layout === "row"
