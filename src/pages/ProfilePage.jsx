@@ -73,7 +73,7 @@ const ProfilePage = () => {
 
       if (updateError) throw updateError;
 
-      setProfile({ ...profile, avatar_url: publicUrl });
+      await fetchProfile();
       alert('Profile picture updated! 🍑');
     } catch (error) {
       alert('Error uploading avatar: ' + error.message);
@@ -88,12 +88,18 @@ const ProfilePage = () => {
       return;
     }
 
+    if (newUsername.trim().length < 3) {
+      alert('Username must be at least 3 characters');
+      return;
+    }
+
     try {
       const { data: existing } = await supabase
         .from('profiles')
         .select('username')
         .eq('username', newUsername)
-        .single();
+        .neq('id', user.id)
+        .maybeSingle();
 
       if (existing) {
         alert('Username claimed, change username');
@@ -107,7 +113,7 @@ const ProfilePage = () => {
 
       if (error) throw error;
 
-      setProfile({ ...profile, username: newUsername });
+      await fetchProfile();
       setIsEditingUsername(false);
       alert('Username updated! 🍑');
     } catch (error) {
@@ -142,7 +148,6 @@ const ProfilePage = () => {
         </h1>
 
         <div className="bg-[#1a1a2e] rounded-2xl p-8 border border-violet-500/20">
-          {/* Avatar Section */}
           <div className="flex justify-center mb-8">
             <div className="relative">
               <div className="w-32 h-32 rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 p-1">
@@ -180,7 +185,6 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Username Section */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-400 mb-2">
               Username
@@ -227,7 +231,6 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* User ID Section */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-2">
               User ID
@@ -248,7 +251,6 @@ const ProfilePage = () => {
             )}
           </div>
 
-          {/* Logout Button */}
           <button
             onClick={handleSignOut}
             className="w-full p-4 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
