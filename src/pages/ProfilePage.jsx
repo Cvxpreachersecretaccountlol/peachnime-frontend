@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Edit2, Copy, Check, LogOut } from 'lucide-react';
+import { Camera, Edit2, Copy, Check, LogOut, RefreshCw } from 'lucide-react';
 
 const ProfilePage = () => {
   const { user, signOut } = useAuth();
@@ -13,6 +13,7 @@ const ProfilePage = () => {
   const [newUsername, setNewUsername] = useState('');
   const [copied, setCopied] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -20,9 +21,10 @@ const ProfilePage = () => {
       return;
     }
     fetchProfile();
-  }, [user, navigate]);
+  }, [user, navigate, refreshKey]);
 
   const fetchProfile = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -30,9 +32,14 @@ const ProfilePage = () => {
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Fetch error:', error);
+        throw error;
+      }
+      
+      console.log('Fetched profile:', data);
       setProfile(data);
-      setNewUsername(data.username);
+      setNewUsername(data.username || '');
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -54,28 +61,46 @@ const ProfilePage = () => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const filePath = `${user.id}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading to:', filePath);
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', uploadData);
 
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      const { error: updateError } = await supabase
+      console.log('Public URL:', publicUrl);
+
+      const { data: updateData, error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select()
+        .single();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Update error:', updateError);
+        throw updateError;
+      }
 
-      await fetchProfile();
+      console.log('Profile updated:', updateData);
+
+      setProfile(updateData);
+      setRefreshKey(prev => prev + 1);
       alert('Profile picture updated! 🍑');
     } catch (error) {
+      console.error('Error in avatar upload:', error);
       alert('Error uploading avatar: ' + error.message);
     } finally {
       setUploading(false);
@@ -88,7 +113,9 @@ const ProfilePage = () => {
       return;
     }
 
-    if (newUsername.trim().length < 3) {
+    const trimmedUsername = newUsername.trim();
+
+    if (trimmedUsername.length < 3) {
       alert('Username must be at least 3 characters');
       return;
     }
@@ -97,7 +124,7 @@ const ProfilePage = () => {
       const { data: existing } = await supabase
         .from('profiles')
         .select('username')
-        .eq('username', newUsername)
+        .eq('username', trimmedUsername)
         .neq('id', user.id)
         .maybeSingle();
 
@@ -106,17 +133,28 @@ const ProfilePage = () => {
         return;
       }
 
-      const { error } = await supabase
+      console.log('Updating username to:', trimmedUsername);
+
+      const { data: updateData, error: updateError } = await supabase
         .from('profiles')
-        .update({ username: newUsername })
-        .eq('id', user.id);
+        .update({ username: trimmedUsername })
+        .eq('id', user.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (updateError) {
+        console.error('Update error:', updateError);
+        throw updateError;
+      }
 
-      await fetchProfile();
+      console.log('Username updated:', updateData);
+
+      setProfile(updateData);
       setIsEditingUsername(false);
+      setRefreshKey(prev => prev + 1);
       alert('Username updated! 🍑');
     } catch (error) {
+      console.error('Error updating username:', error);
       alert('Error updating username: ' + error.message);
     }
   };
@@ -132,6 +170,10 @@ const ProfilePage = () => {
     navigate('/auth');
   };
 
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a1a] text-white flex items-center justify-center">
@@ -143,9 +185,18 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-[#0a0a1a] text-white pt-24 pb-12 px-6">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-cyan-500 mb-12 text-center">
-          Profile 🍑
-        </h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-cyan-500 text-center flex-1">
+            Profile 🍑
+          </h1>
+          <button
+            onClick={handleRefresh}
+            className="p-3 bg-violet-500/20 rounded-xl hover:bg-violet-500/30 transition-all"
+            title="Refresh profile"
+          >
+            <RefreshCw size={20} />
+          </button>
+        </div>
 
         <div className="bg-[#1a1a2e] rounded-2xl p-8 border border-violet-500/20">
           <div className="flex justify-center mb-8">
@@ -154,9 +205,13 @@ const ProfilePage = () => {
                 <div className="w-full h-full rounded-full bg-[#16213e] flex items-center justify-center overflow-hidden">
                   {profile?.avatar_url ? (
                     <img
-                      src={profile.avatar_url}
+                      src={`${profile.avatar_url}?t=${refreshKey}`}
                       alt="Avatar"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error('Image load error');
+                        e.target.style.display = 'none';
+                      }}
                     />
                   ) : (
                     <span className="text-5xl">🍑</span>
