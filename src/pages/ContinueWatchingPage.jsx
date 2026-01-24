@@ -34,7 +34,7 @@ const ContinueWatchingPage = () => {
       // Get one entry per anime (most recent)
       const uniqueAnime = [];
       const seenIds = new Set();
-      
+
       data?.forEach(item => {
         if (!seenIds.has(item.anime_id)) {
           seenIds.add(item.anime_id);
@@ -51,9 +51,9 @@ const ContinueWatchingPage = () => {
   };
 
   const deleteFromHistory = async (e, animeId) => {
-    e.preventDefault(); // Prevent navigation
+    e.preventDefault();
     e.stopPropagation();
-    
+
     try {
       const { error } = await supabase
         .from('watch_history')
@@ -120,9 +120,9 @@ const ContinueWatchingPage = () => {
         ) : (
           <div className="space-y-3">
             {watchHistory.map((item) => (
-              <Link
+              <div
                 key={item.id}
-                to={`/watch/${item.anime_id}?ep=${item.episode_number}`}
+                onClick={() => navigate(`/watch/${item.anime_id}?ep=${item.episode_number}`)}
                 className="bg-[#1a1a2e] rounded-xl p-4 border border-violet-500/20 hover:border-violet-500/40 transition-all flex gap-4 items-center group cursor-pointer"
               >
                 <img
@@ -130,7 +130,7 @@ const ContinueWatchingPage = () => {
                   alt={item.anime_title}
                   className="w-20 h-28 object-cover rounded-lg flex-shrink-0"
                 />
-                
+
                 <div className="flex-1">
                   <h3 className="font-bold text-lg mb-1 group-hover:text-violet-400 transition-colors line-clamp-1">
                     {item.anime_title}
@@ -150,7 +150,7 @@ const ContinueWatchingPage = () => {
                 >
                   <FaTrash />
                 </button>
-              </Link>
+              </div>
             ))}
           </div>
         )}
