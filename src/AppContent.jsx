@@ -19,6 +19,8 @@ import PublicProfilePage from "./pages/PublicProfilePage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ContinueWatchingPage from "./pages/ContinueWatchingPage";
+import HistoryPage from "./pages/HistoryPage";
+import MyListPage from "./pages/MyListPage";
 import { AuthProvider } from './context/AuthContext';
 
 const pageVariants = {
@@ -61,6 +63,8 @@ const AppContent = () => {
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/continue-watching" element={<ContinueWatchingPage />} />
+              <Route path="/history" element={<HistoryPage />} />
+              <Route path="/my-list" element={<MyListPage />} />
               <Route path="*" element={<PageNotFound />} />
             </Routes>
           </motion.div>
