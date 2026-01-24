@@ -23,9 +23,8 @@ const WatchPage = () => {
 
   const ep = searchParams.get("ep");
 
-  // Scroll to top when page loads or episode changes
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   }, [id, ep]);
 
   const { data, isError } = useApi(`/episodes/${id}`);
@@ -56,7 +55,7 @@ const WatchPage = () => {
         setTimeout(() => setShowResumeMessage(false), 10000);
       }
     } catch (error) {
-      // No watch history found
+      console.log('No watch history');
     }
   };
 
@@ -198,11 +197,9 @@ const WatchPage = () => {
         </ul>
       </div>
 
-      {/* Comments Section */}
       <CommentsSection animeId={id} episodeNumber={ep ? parseInt(ep) : 1} />
     </div>
   );
 };
 
 export default WatchPage;
-
