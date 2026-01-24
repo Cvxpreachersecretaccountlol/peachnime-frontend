@@ -179,15 +179,6 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
     }
   };
 
-  const viewFullProfile = () => {
-    if (profilePopup) {
-      const userId = profilePopup.userId;
-      setProfilePopup(null);
-      setIsOpen(false);
-      navigate(`/profile/${userId}`);
-    }
-  };
-
   const Comment = ({ comment, isReply = false }) => {
     const [showReplies, setShowReplies] = useState(false);
     const [replies, setReplies] = useState([]);
@@ -426,13 +417,6 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
                   <p className="text-green-400 text-sm mt-2">Copied! ✓</p>
                 )}
               </div>
-
-              <button
-                onClick={viewFullProfile}
-                className="w-full p-3 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-xl font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all"
-              >
-                View Full Profile
-              </button>
             </div>
           </div>
         </div>
