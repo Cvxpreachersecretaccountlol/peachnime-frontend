@@ -16,6 +16,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
   const [profilePopup, setProfilePopup] = useState(null);
   const [copied, setCopied] = useState(false);
   const [likedComments, setLikedComments] = useState(new Set());
+  const [commentFilter, setCommentFilter] = useState('episode'); // 'episode' or 'all'
 
   useEffect(() => {
     fetchComments();
@@ -31,16 +32,22 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
       .subscribe();
 
     return () => subscription.unsubscribe();
-  }, [animeId, episodeNumber, user]);
+  }, [animeId, episodeNumber, user, commentFilter]);
 
   const fetchComments = async () => {
-    const { data, error } = await supabase
+    let query = supabase
       .from('comments')
       .select('*')
       .eq('anime_id', animeId)
-      .eq('episode_number', episodeNumber)
       .is('parent_comment_id', null)
       .order('created_at', { ascending: false });
+
+    // Filter by episode or show all
+    if (commentFilter === 'episode') {
+      query = query.eq('episode_number', episodeNumber);
+    }
+
+    const { data, error } = await query;
 
     if (!error && data) {
       setComments(data);
@@ -121,7 +128,6 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
       const isLiked = likedComments.has(commentId);
 
       if (isLiked) {
-        // Unlike
         await supabase
           .from('comment_likes')
           .delete()
@@ -145,7 +151,6 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
           return newSet;
         });
       } else {
-        // Like
         await supabase
           .from('comment_likes')
           .insert({ comment_id: commentId, user_id: user.id });
@@ -242,6 +247,11 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
               <span className="text-xs text-gray-500 flex-shrink-0">
                 {new Date(comment.created_at).toLocaleDateString()}
               </span>
+              {commentFilter === 'all' && (
+                <span className="text-xs bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded">
+                  EP {comment.episode_number}
+                </span>
+              )}
             </div>
 
             <p className="text-gray-300 mb-2 break-words">{comment.comment_text}</p>
@@ -327,18 +337,44 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
     <>
       <div className="flex justify-center my-8 px-4">
         <div className="bg-[#1a1a2e] w-full max-w-2xl rounded-2xl border border-violet-500/20 flex flex-col" style={{ maxHeight: '80vh' }}>
-          <div className="flex items-center justify-between p-4 border-b border-violet-500/20 flex-shrink-0">
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-2 hover:bg-violet-500/20 rounded-lg transition-all"
-            >
-              <ArrowLeft size={24} className="text-gray-400" />
-            </button>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <MessageCircle size={24} className="text-violet-400" />
-              {comments.length} Comments
-            </h2>
-            <div className="w-10"></div>
+          <div className="flex-shrink-0">
+            <div className="flex items-center justify-between p-4 border-b border-violet-500/20">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 hover:bg-violet-500/20 rounded-lg transition-all"
+              >
+                <ArrowLeft size={24} className="text-gray-400" />
+              </button>
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <MessageCircle size={24} className="text-violet-400" />
+                {comments.length} Comments
+              </h2>
+              <div className="w-10"></div>
+            </div>
+
+            {/* Filter Toggle */}
+            <div className="flex gap-2 p-3 bg-[#16213e]">
+              <button
+                onClick={() => setCommentFilter('episode')}
+                className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+                  commentFilter === 'episode'
+                    ? 'bg-gradient-to-r from-violet-500 to-cyan-500 text-white'
+                    : 'bg-[#1a1a2e] text-gray-400 hover:text-white'
+                }`}
+              >
+                Episode {episodeNumber}
+              </button>
+              <button
+                onClick={() => setCommentFilter('all')}
+                className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+                  commentFilter === 'all'
+                    ? 'bg-gradient-to-r from-violet-500 to-cyan-500 text-white'
+                    : 'bg-[#1a1a2e] text-gray-400 hover:text-white'
+                }`}
+              >
+                All Episodes
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ minHeight: 0 }}>
