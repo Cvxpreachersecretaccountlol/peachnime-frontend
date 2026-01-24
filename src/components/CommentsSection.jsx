@@ -15,9 +15,13 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
   const [loading, setLoading] = useState(false);
   const [profilePopup, setProfilePopup] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [likedComments, setLikedComments] = useState(new Set());
 
   useEffect(() => {
     fetchComments();
+    if (user) {
+      fetchUserLikes();
+    }
     const subscription = supabase
       .channel(`comments-${animeId}-${episodeNumber}`)
       .on('postgres_changes', 
@@ -27,7 +31,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
       .subscribe();
 
     return () => subscription.unsubscribe();
-  }, [animeId, episodeNumber]);
+  }, [animeId, episodeNumber, user]);
 
   const fetchComments = async () => {
     const { data, error } = await supabase
@@ -41,6 +45,18 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
     if (!error && data) {
       setComments(data);
       if (data.length > 0) setLatestComment(data[0]);
+    }
+  };
+
+  const fetchUserLikes = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('comment_likes')
+      .select('comment_id')
+      .eq('user_id', user.id);
+    
+    if (data) {
+      setLikedComments(new Set(data.map(like => like.comment_id)));
     }
   };
 
@@ -78,7 +94,8 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
           username: profile?.username || 'Anonymous',
           avatar_url: profile?.avatar_url,
           comment_text: newComment,
-          parent_comment_id: replyTo?.id || null
+          parent_comment_id: replyTo?.id || null,
+          likes: 0
         }
       ]);
 
@@ -94,49 +111,66 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
     }
   };
 
-  const handleLike = async (commentId, currentLikes) => {
+  const handleLike = async (commentId) => {
     if (!user) {
       navigate('/auth');
       return;
     }
 
     try {
-      const { data: existing, error: checkError } = await supabase
-        .from('comment_likes')
-        .select()
-        .eq('comment_id', commentId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const isLiked = likedComments.has(commentId);
 
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
+      if (isLiked) {
+        // Unlike
+        await supabase
+          .from('comment_likes')
+          .delete()
+          .eq('comment_id', commentId)
+          .eq('user_id', user.id);
 
-      if (existing) {
-        await supabase.from('comment_likes').delete().eq('id', existing.id);
-        await supabase.from('comments').update({ likes: Math.max(0, currentLikes - 1) }).eq('id', commentId);
+        const { data: comment } = await supabase
+          .from('comments')
+          .select('likes')
+          .eq('id', commentId)
+          .single();
+
+        await supabase
+          .from('comments')
+          .update({ likes: Math.max(0, (comment?.likes || 1) - 1) })
+          .eq('id', commentId);
+
+        setLikedComments(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(commentId);
+          return newSet;
+        });
       } else {
-        await supabase.from('comment_likes').insert({ comment_id: commentId, user_id: user.id });
-        await supabase.from('comments').update({ likes: (currentLikes || 0) + 1 }).eq('id', commentId);
+        // Like
+        await supabase
+          .from('comment_likes')
+          .insert({ comment_id: commentId, user_id: user.id });
+
+        const { data: comment } = await supabase
+          .from('comments')
+          .select('likes')
+          .eq('id', commentId)
+          .single();
+
+        await supabase
+          .from('comments')
+          .update({ likes: (comment?.likes || 0) + 1 })
+          .eq('id', commentId);
+
+        setLikedComments(prev => new Set([...prev, commentId]));
       }
+
       await fetchComments();
     } catch (error) {
       console.error('Error liking comment:', error);
     }
   };
 
-  const checkIfLiked = async (commentId) => {
-    if (!user) return false;
-    const { data } = await supabase
-      .from('comment_likes')
-      .select()
-      .eq('comment_id', commentId)
-      .eq('user_id', user.id)
-      .maybeSingle();
-    return !!data;
-  };
-
-  const showProfilePopup = (userId, username) => {
+  const showProfilePopup = async (userId, username) => {
     setProfilePopup({ userId, username });
   };
 
@@ -148,14 +182,20 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
     }
   };
 
+  const viewFullProfile = () => {
+    if (profilePopup) {
+      setProfilePopup(null);
+      setIsOpen(false);
+      navigate('/profile');
+    }
+  };
+
   const Comment = ({ comment, isReply = false }) => {
     const [showReplies, setShowReplies] = useState(false);
     const [replies, setReplies] = useState([]);
-    const [isLiked, setIsLiked] = useState(false);
     const [replyCount, setReplyCount] = useState(0);
 
     useEffect(() => {
-      checkIfLiked(comment.id).then(setIsLiked);
       loadReplyCount();
     }, [comment.id]);
 
@@ -208,10 +248,10 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
 
             <div className="flex items-center gap-4 text-sm flex-wrap">
               <button
-                onClick={() => handleLike(comment.id, comment.likes)}
+                onClick={() => handleLike(comment.id)}
                 className="flex items-center gap-1 text-gray-400 hover:text-red-400 transition-all"
               >
-                <Heart size={16} className={isLiked ? 'fill-red-400 text-red-400' : ''} />
+                <Heart size={16} className={likedComments.has(comment.id) ? 'fill-red-400 text-red-400' : ''} />
                 <span>{comment.likes || 0}</span>
               </button>
 
@@ -347,7 +387,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
       {/* Profile Popup */}
       {profilePopup && (
         <div 
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"
           onClick={() => setProfilePopup(null)}
         >
           <div 
@@ -391,10 +431,7 @@ const CommentsSection = ({ animeId, episodeNumber }) => {
               </div>
 
               <button
-                onClick={() => {
-                  setProfilePopup(null);
-                  navigate(`/profile/${profilePopup.userId}`);
-                }}
+                onClick={viewFullProfile}
                 className="w-full p-3 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-xl font-bold hover:shadow-lg hover:shadow-violet-500/50 transition-all"
               >
                 View Full Profile
